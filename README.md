@@ -45,7 +45,7 @@ bash domain-kit/scripts/install-domain-kit.sh /path/to/architecture-hub
 
 No monorepo `work-hub`: `architecture-hub` e `work-kit` são pastas irmãs.
 
-Comando Cursor: `/workkit.init`
+Comando Cursor: `/domain.install` (alias deprecado: `/workkit.init`)
 
 ## Relacionados (monorepo work-hub)
 

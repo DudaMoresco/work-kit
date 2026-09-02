@@ -2,7 +2,7 @@
 
 **Skill original:** N/A — import manual ou futuro MCP Confluence
 
-**Invocada por:** `/domain.scan`
+**Invocada por:** `/domain.discover` (fase 0), `/domain.scan` (re-sync opcional)
 
 **Fluxo padrão hoje:**
 1. Usuário exporta páginas → `products/{p}/01-product/00-scan/imports/confluence/`

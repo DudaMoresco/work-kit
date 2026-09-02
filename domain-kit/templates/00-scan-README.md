@@ -1,6 +1,6 @@
 # Scan — {produto}
 
-> Gerado por `/domain.scan`. Findings citados; incorporação via `/domain.clarify scan`.
+> Gerado por ingestão de fontes (fase 0 de `/domain.init` ou re-sync via `/domain.scan`). Findings citados; curadoria na mesma sessão do init ou scan.
 
 ## Status
 

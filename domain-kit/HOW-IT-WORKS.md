@@ -19,7 +19,8 @@ Handoff domain → arch: **H2** quando Gate **G2** passa ([../references/handoff
 
 | Camada | Comandos | Papel |
 | --- | --- | --- |
-| **Meta** | init, scan, clarify, status | Setup, fontes, conversa, visibilidade |
+| **Hub** | install | Framework no hub (1x) |
+| **Meta** | init, scan, status | Bootstrap produto, re-sync fontes, visibilidade |
 | **Macro** | discover, model | Orquestram várias skills em batch |
 | **Micro** | flow, capability, decision | Uma unidade de trabalho por sessão |
 
@@ -34,10 +35,14 @@ Macro = conveniente para replay; **micro = recomendado** em produtos com N fluxo
 | `domain-status.json` | Fase atual, gates, scan status |
 | `flows-registry.yml` | Catálogo fluxo-NN, deps, status |
 | `scan-manifest.json` | Findings de fontes externas (citados) |
+| `CHANGELOG.md` | Histórico de scans e mudanças significativas |
 | `03-registry/produto.md` | Decisões D-n |
 | Artefatos MD | Conteúdo; dashboard só lê |
 
 O dashboard HTML é **read-only** — nunca inventa progresso.
+
+Diagramas PlantUML nos MD são renderizados na aba Preview via servidor local (**porta 8765**).
+Ver [references/plantuml-dashboard.md](references/plantuml-dashboard.md).
 
 ---
 
@@ -45,7 +50,7 @@ O dashboard HTML é **read-only** — nunca inventa progresso.
 
 | Gate | Após | Critério resumido |
 | --- | --- | --- |
-| **G0** | scan | Manifest ou skip documentado |
+| **G0** | init (scan + síntese) | Manifest ou skip documentado + `sintese-evidencias.md` recomendado |
 | **G1** | discover | Estratégico + BCs + discovery |
 | **G2** | model | Integração + tático + fluxos + D-n + RF |
 
@@ -53,24 +58,60 @@ Definição: [references/gates.yml](references/gates.yml) · validação: `valid
 
 ---
 
-## Scan externo
+## Ingestão de fontes externas
+
+Lógica **Plan + Execute + curadoria**. Roda na **fase 0 de `/domain.init`** (Gate G0). **`/domain.scan`** para re-sync.
 
 ```mermaid
 sequenceDiagram
   participant User
-  participant Scan as domain.scan
+  participant Init as domain_init
+  participant Plan as scan_discover
   participant MCP as GitHub_MCP
   participant Hub as architecture_hub
+  participant Discover as domain_discover
 
-  User->>Scan: sources.yml
-  Scan->>MCP: get_file_contents
-  MCP-->>Scan: README docs
-  Scan->>Hub: scan-manifest.json
-  Scan->>User: clarify incorporar?
-  User->>Hub: artefatos confirmados
+  User->>Init: domain.init
+  Init->>Plan: fase 0 — fontes
+  alt sources vazio
+    Plan->>User: AskQuestion fontes
+    User->>Plan: confirma draft
+    Plan->>Hub: grava sources.yml
+  end
+  Init->>MCP: get_file_contents
+  MCP-->>Init: README docs
+  Init->>Hub: scan-manifest.json
+  Init->>User: curadoria findings
+  Init->>User: sintese evidencias
+  User->>Init: confirma sintese + G0
+  User->>Discover: domain.discover
+  Discover->>User: lacunas 0b
+  User->>Discover: domain.discover auto
+  Discover->>User: 1 estagio DDD + rascunho
 ```
 
+Roteiro Plan: [templates/clarify/scan-discover.md](templates/clarify/scan-discover.md) · Curadoria: [templates/clarify/scan.md](templates/clarify/scan.md)
+
 GitLab/Confluence: mesmo contrato de manifest; implementação via wrapper + fallback manual ([wrappers/scan-gitlab.md](wrappers/scan-gitlab.md)).
+
+---
+
+## Plan mode
+
+Todo conteúdo: **rascunho** (`.draft/` + chat) → **OK** → hub. Ver [references/plan-mode.md](references/plan-mode.md).
+
+`/domain.clarify` **deprecado** — não documentar como passo do pipeline.
+
+## Lazy init (pastas sob demanda)
+
+| Pasta | Criado por |
+| --- | --- |
+| `01-product/00-scan/` | `/domain.init` (G0) ou `/domain.scan` (re-sync) |
+| `01-product/01-vision/`, `02-domain/`, `03-discovery/` | `/domain.discover` |
+| `02-capabilities/{bc}/` | `/domain.capability`, `/domain.flow` |
+| `04-platform/01-non-functional/` | `/domain.model` |
+
+`/domain.init` cria índices + conduz primeiro scan. **`--adopt`** para produtos já no hub.
 
 ---
 
@@ -120,7 +161,7 @@ Espelha filosofia do [spec-kit-dashboard](../../spec-kit-dashboard/).
 
 ```text
 domain-kit/
-├── GUIDE.md ONBOARDING.md HOW-IT-WORKS.md
+├── GUIDE.md ONBOARDING.md HOW-IT-WORKS.md INVENTORY.md
 ├── SKILL.md
 ├── wrappers/           ← contratos (não editam skills originais)
 ├── templates/          ← sources, registry, commands overlays

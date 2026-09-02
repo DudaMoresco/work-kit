@@ -6,9 +6,10 @@ kit: domain-kit
 
 gates:
   G0:
-    name: Scan (opcional)
-    command: domain.scan
+    name: Scan complete
+    command: domain.init
     optional: true
+    note: Primeiro scan roda em domain.init; domain.scan é re-sync
     requires:
       - field: domain-status.json scan in [complete, partial, skipped]
       - or_path: products/{produto}/01-product/00-scan/scan-manifest.json

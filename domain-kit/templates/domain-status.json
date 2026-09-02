@@ -3,13 +3,14 @@
   "initiative": "{iniciativa}",
   "updatedAt": null,
   "phase": "init",
-  "scan": "skipped",
+  "scan": "pending",
   "gates": {
     "G0": "pending",
     "G1": "pending",
     "G2": "pending"
   },
   "discover": {
+    "evidenceBrief": "pending",
     "estrategico": "pending",
     "stories": "pending",
     "eventStorming": "pending",
@@ -26,5 +27,5 @@
     "decisoesProduto": 0,
     "abertas": 0
   },
-  "nextSuggested": "/domain.scan"
+  "nextSuggested": "/domain.discover"
 }

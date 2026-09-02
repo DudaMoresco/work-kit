@@ -1,11 +1,15 @@
 ---
 name: domain-scan
-description: Scan de fontes externas (GitHub, GitLab, Confluence) para products/{produto}/sources.yml.
+description: Re-sync de fontes (opcional) — plan mode; curadoria + refresh síntese na mesma sessão.
 ---
 
 ## Explain to user
 
-Vou ler as fontes em `sources.yml` (GitHub via MCP quando disponível; GitLab/Confluence via CLI ou pasta imports) e gerar um manifesto em `00-scan/` para você revisar. Nenhum conteúdo entra no domínio sem `/domain.clarify scan`.
+Atualizo fontes externas quando repos/docs mudaram. **Plan mode:** manifest e sources em `.draft/` até você aprovar. Curadoria de findings **nesta mesma conversa** — sem `/domain.clarify`.
+
+Se o manifest mudou materialmente, **atualizo a síntese de evidências** (`sintese-evidencias.md`) e **registro entrada no CHANGELOG** do produto. Lacunas novas ficam para a próxima sessão de `/domain.discover`.
+
+Contrato: [plan-mode.md](../../references/plan-mode.md)
 
 ## User Input
 
@@ -13,18 +17,24 @@ Vou ler as fontes em `sources.yml` (GitHub via MCP quando disponível; GitLab/Co
 $ARGUMENTS
 ```
 
+Flags: `--plan`
+
+## Quando usar
+
+| Situação | Comando |
+| --- | --- |
+| Produto novo — primeiro scan + síntese | `/domain.init` (fases 0 + 0c) |
+| Repo/docs mudou depois | **`/domain.scan`** (este) |
+
 ## Steps
 
-1. Resolver `{produto}` — cwd ou argumento.
-2. Ler `products/{produto}/sources.yml`. Se vazio → WARN, status `skipped`, sair.
-3. Seguir wrappers (read-only skills originais):
-   - [scan-github.md](../../wrappers/scan-github.md) — MCP `user-github`
-   - [scan-gitlab.md](../../wrappers/scan-gitlab.md)
-   - [scan-confluence.md](../../wrappers/scan-confluence.md)
-4. Processar `manual:` paths relativos ao hub.
-5. Gravar `01-product/00-scan/scan-manifest.json` e `README.md`.
-6. Atualizar `domain-status.json`: `scan: complete|partial|skipped`.
-7. Regenerar dashboard.
-8. Handoff → `/domain.clarify scan`
+1. Resolver `{produto}`.
+2. **Plan** — se sources vazio ou `--plan`: [scan-discover.md](../../templates/clarify/scan-discover.md) → draft `sources.yml`
+3. **Execute** — wrappers scan-* → draft `scan-manifest.json`, `00-scan/README.md`
+4. **Curadoria inline** — [scan.md](../../templates/clarify/scan.md); preview; OK → promote manifest + sources
+5. **Refresh síntese** — se findings mudaram materialmente: [findings-brief.md](../../templates/clarify/findings-brief.md) → draft/promote `sintese-evidencias.md` (plan mode). **Não** reabrir perguntas de lacuna (0b) — discover trata na próxima sessão.
+6. **Changelog** — após promote: [changelog.md](../../templates/clarify/changelog.md) → append em `CHANGELOG.md` (obrigatório em todo scan); exibir no checkpoint.
+7. Atualizar `domain-status.json` (via draft + promote)
+8. **Sync visibilidade** — `sync_product_workspace.py` + [visibility-checkpoint.md](../../templates/clarify/visibility-checkpoint.md) após rascunhos e após promote
 
-**Proibido:** inventar conteúdo de repo/wiki não lido.
+**Proibido:** gravar paths canônicos sem OK; inventar conteúdo não lido.

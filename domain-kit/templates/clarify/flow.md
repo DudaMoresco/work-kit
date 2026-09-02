@@ -1,4 +1,6 @@
-# Clarify — flow {NN}
+> Roteiro **interno** — inline em `/domain.flow`. Não invocar `/domain.clarify`.
+
+# Flow {NN} — perguntas
 
 1. **Ator** principal deste fluxo?
 2. **Entrada** (dados/eventos) e **saída** esperada?

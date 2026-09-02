@@ -2,30 +2,26 @@
 
 Framework estilo spec-kit para **mapeamento de negócio → domínio** no `architecture-hub`.
 
-Documentação: [GUIDE.md](GUIDE.md) · Setup: [ONBOARDING.md](ONBOARDING.md) · Internals: [HOW-IT-WORKS.md](HOW-IT-WORKS.md)
+Documentação: [COMMAND-GUIDE.md](COMMAND-GUIDE.md) · [GUIDE.md](GUIDE.md) · [ONBOARDING.md](ONBOARDING.md) · [INVENTORY.md](INVENTORY.md)
 
 ## Comandos
 
 | Camada | Comando |
 | --- | --- |
-| Meta | `workkit.init`, `domain.init`, **`domain.scan`**, `domain.clarify`, `domain.status` |
+| Hub | `domain.install` (`workkit.init` deprecado) |
+| Meta | `domain.init`, `domain.scan`, `domain.status` |
 | Macro | `domain.discover`, `domain.model` |
 | Micro | `domain.flow`, `domain.capability`, `domain.decision` |
 
-## Pipeline
+## Pipeline — produto novo
 
 ```text
-workkit.init → domain.init → domain.scan → clarify → discover
-  → domain.flow 01…NN → domain.capability → domain.model --finalize
-  → dashboard.html → arch-kit
+domain.install → domain.init (G0) → domain.discover (G1)
+  → domain.flow 01…NN → domain.capability → domain.model --finalize (G2)
+  → arch-kit
 ```
 
-## Princípios
-
-- **Wrappers** em [`wrappers/`](wrappers/) — skills DDD originais **não são editadas**
-- **Conversa** antes de gravar (`clarify` + confirmação humana)
-- **Scan** GitHub/GitLab/Confluence via [`sources.yml`](templates/sources.yml)
-- **Dashboard** read-only — [`generate_domain_dashboard.py`](scripts/generate_domain_dashboard.py)
+Produtos antigos: [COMMAND-GUIDE.md](COMMAND-GUIDE.md)
 
 ## Instalação
 
@@ -33,9 +29,12 @@ workkit.init → domain.init → domain.scan → clarify → discover
 bash domain-kit/scripts/install-domain-kit.sh /path/to/architecture-hub
 ```
 
-## Status implementação
+Comando Cursor: `/domain.install`
 
-- [x] Docs, wrappers, templates, gates
-- [x] Scripts dashboard + validate + install
-- [x] Command overlays
-- [x] Fixture oficina-mecanica
+## Sandbox local
+
+```bash
+bash domain-kit/scripts/bootstrap-test-hub.sh
+```
+
+Ver [test-hub/README.md](test-hub/README.md).

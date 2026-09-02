@@ -2,51 +2,66 @@
 
 Spec completa. Overlays: [`../templates/commands/`](../templates/commands/).
 
-**Regra global:** ler wrapper em [`../wrappers/`](../wrappers/); skill original read-only; **pausar antes de gravar**.
+**Guia prático:** [`../COMMAND-GUIDE.md`](../COMMAND-GUIDE.md)
+
+**Regras globais:**
+
+1. **[Plan mode](../references/plan-mode.md)** — conteúdo em `.draft/` + preview; promote só após OK.
+2. Ler **wrapper**; skill DDD read-only; **sem `/domain.clarify`** separado.
 
 ---
 
-## Meta
+## Meta — hub e produto
 
-### `/workkit.init`
+### `/domain.install`
 
-Instala framework no hub. Script: `install-domain-kit.sh`. Ver [ONBOARDING.md](../ONBOARDING.md).
+Instala framework no hub (1x). Script: `install-domain-kit.sh`. Ver [ONBOARDING.md](../ONBOARDING.md).
 
-### `/domain.init {produto} [--initiative {i}]`
+**Entrega:** skills, scripts, MCP checklist. **Não entrega:** artefatos de produto.
 
-Cria árvore produto, `sources.yml`, `flows-registry.yml`, `domain-status.json`, dashboard inicial.
+### `/workkit.init` — deprecado
 
-**Explain to user:** Vou criar a estrutura do produto no hub e um dashboard vazio. Depois configure `sources.yml` e rode `/domain.scan`.
+Alias de `/domain.install`. Redirecionar com aviso.
 
-### `/domain.scan`
+### `/domain.init {produto} [--initiative {i}] [--adopt]`
 
-Lê [`sources.yml`](../templates/sources.yml); wrappers scan-github/gitlab/confluence.
+Bootstrap do produto: índices + **primeiro scan** (fase 0) → Gate G0.
+
+Com `--adopt`: produto já no hub — gera índices faltantes, inventário, gaps via `adopt_product.py`.
+
+**Entrega:** `sources.yml`, `scan-manifest.json`, índices. **Não entrega:** BCs, fluxos, tático.
+
+**Handoff:** `/domain.discover`
+
+### `/domain.scan [--plan]`
+
+Re-sync de fontes quando repos/docs mudaram **sem** refazer discover.
 
 **Saídas:** `01-product/00-scan/scan-manifest.json`, `README.md`
 
-**Explain to user:** Vou buscar README e docs nas fontes configuradas e montar um manifesto para você revisar — nada entra no domínio sem sua confirmação.
-
-### `/domain.clarify [discover|bc|flow|scan|open]`
-
-Bancos: [`../templates/clarify/`](../templates/clarify/).
-
 ### `/domain.status`
 
-Lê `domain-status.json`, `flows-registry.yml`, roda `validate_gate.py`.
+Lê gates via `validate_gate.py --suggest`; lista fluxos bloqueados; próximo comando sugerido.
+
+### `/domain.clarify` — deprecado
+
+Redirecionar para comando principal.
 
 ---
 
-## Macro
+## Macro — descoberta e modelagem
 
-### `/domain.discover`
+### `/domain.discover [--mode full|minimal|as-is-first|incremental] [--bc {bc}]`
 
-Orquestra wrappers: estratégico → stories → ES → UL/BCs. Hook: clarify discover.
+Descoberta DDD → Gate G1. **Pré-condição:** G0 (scan via init). Pula fase 0 se G0 ok.
 
-**Gate G1** ao final.
+Roteiros: [`discover.md`](../templates/clarify/discover.md)
 
-### `/domain.model [--finalize]`
+Modos: ver [COMMAND-GUIDE.md](../COMMAND-GUIDE.md)
 
-Integração, requisitos, ou sweep final. Com `--finalize`: valida G2 → handoff H2 arch-kit.
+### `/domain.model [--finalize] [--mode full|incremental] [--bc {bc}]`
+
+Integração, requisitos, sweep. Com `--finalize`: G2 → handoff H2 arch-kit.
 
 Micro-comandos `flow`/`capability` rodam **antes** do finalize.
 
@@ -57,7 +72,7 @@ Micro-comandos `flow`/`capability` rodam **antes** do finalize.
 ### `/domain.flow {NN}`
 
 1. Validar deps (`flow_deps.py`)
-2. clarify flow
+2. Perguntas inline
 3. Wrapper fluxos-entregaveis
 4. Atualizar `flows-registry.yml` → `ready`
 5. Regenerar dashboard
@@ -76,7 +91,7 @@ Propor D-n → confirmar → `03-registry/produto.md`.
 
 | ID | De → Para |
 | --- | --- |
-| H0 | scan → clarify |
+| H0 | init (scan G0) → discover |
 | H1 | discover → model |
 | H2 | model --finalize → arch-kit |
 
@@ -84,10 +99,12 @@ Ver [../../references/handoffs.md](../../references/handoffs.md).
 
 ---
 
-## Fluxo recomendado
+## Fluxo recomendado — produto novo
 
 ```text
-workkit.init → domain.init → domain.scan → clarify discover
-  → domain.discover → domain.flow 01…NN
+domain.install → domain.init → domain.discover
+  → domain.flow 01…NN
   → domain.capability {bc}? → domain.model --finalize
 ```
+
+Re-sync: `domain.scan`. Produtos antigos: [COMMAND-GUIDE.md](../COMMAND-GUIDE.md).

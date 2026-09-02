@@ -11,7 +11,7 @@ from pathlib import Path
 
 GATES = {
     "G0": {
-        "name": "Scan",
+        "name": "Scan complete",
         "optional": True,
         "paths": [],
     },
@@ -47,13 +47,15 @@ def check_g0(product_dir: Path, status: dict) -> tuple[bool, list[str]]:
     scan_status = status.get("scan", "pending")
     sources = product_dir / "sources.yml"
     if not sources.exists():
-        issues.append("sources.yml missing (optional)")
-        return True, issues
+        issues.append("sources.yml missing — run /domain.init")
+        return False, issues
     if scan_status in ("complete", "partial", "skipped"):
         return True, issues
     if scan_dir.exists() and (scan_dir / "scan-manifest.json").exists():
         return True, issues
-    issues.append("scan not run — run /domain.scan or set scan: skipped in domain-status.json")
+    issues.append(
+        "scan not run — run /domain.init (primeiro scan, G0) or /domain.scan or set scan: skipped in domain-status.json"
+    )
     return False, issues
 
 
@@ -73,23 +75,36 @@ def check_one_of_dirs(product_dir: Path, dirs: list[str]) -> bool:
     return False
 
 
-def check_capabilities(product_dir: Path) -> list[str]:
+def check_capabilities(product_dir: Path, bc: str | None = None) -> list[str]:
     issues: list[str] = []
     cap_root = product_dir / "02-capabilities"
     if not cap_root.is_dir():
         return ["02-capabilities/ missing"]
+    if bc:
+        bc_dir = cap_root / bc
+        if not bc_dir.is_dir():
+            return [f"capability {bc}/ missing"]
+        if not (bc_dir / "design-tatico.md").exists():
+            issues.append(f"missing design-tatico.md for {bc}")
+        if not (bc_dir / "README.md").exists():
+            issues.append(f"missing README.md for {bc}")
+        return issues
     bcs = [d for d in cap_root.iterdir() if d.is_dir() and not d.name.startswith(".")]
     if not bcs:
         issues.append("no capabilities under 02-capabilities/")
         return issues
-    for bc in bcs:
-        if not (bc / "design-tatico.md").exists():
-            issues.append(f"missing design-tatico.md for {bc.name}")
+    for bc_dir in bcs:
+        if not (bc_dir / "design-tatico.md").exists():
+            issues.append(f"missing design-tatico.md for {bc_dir.name}")
     return issues
 
 
-def count_ready_flows(product_dir: Path) -> tuple[int, int]:
+def count_ready_flows(product_dir: Path, bc: str | None = None) -> tuple[int, int]:
     reg = product_dir / "flows-registry.yml"
+    if bc:
+        flux_dir = product_dir / "02-capabilities" / bc / "fluxos"
+        flux_files = list(flux_dir.glob("*.md")) if flux_dir.is_dir() else []
+        return len(flux_files), len(flux_files)
     if not reg.exists():
         flux_dirs = list((product_dir / "02-capabilities").rglob("fluxos/*.md"))
         return len(flux_dirs), len(flux_dirs)
@@ -99,26 +114,79 @@ def count_ready_flows(product_dir: Path) -> tuple[int, int]:
     return ready, total
 
 
-def validate_gate(product_dir: Path, gate: str, status: dict) -> tuple[bool, list[str]]:
+def validate_gate(
+    product_dir: Path,
+    gate: str,
+    status: dict,
+    mode: str = "full",
+    bc: str | None = None,
+) -> tuple[bool, list[str]]:
     spec = GATES[gate]
     issues: list[str] = []
 
     if gate == "G0":
         return check_g0(product_dir, status)
 
-    issues.extend(check_paths(product_dir, spec.get("paths", [])))
-
     if gate == "G1":
-        if not check_one_of_dirs(product_dir, spec.get("one_of_dirs", [])):
+        issues.extend(check_paths(product_dir, spec.get("paths", [])))
+        if mode == "minimal":
+            # minimal relaxes discovery artifacts — still need BCs + strategic
+            if not check_one_of_dirs(product_dir, spec.get("one_of_dirs", [])):
+                issues.append("minimal mode: discovery optional but recommended")
+        elif not check_one_of_dirs(product_dir, spec.get("one_of_dirs", [])):
             issues.append("need event-storming OR domain-storytelling discovery")
+        return len(issues) == 0, issues
 
-    if gate == "G2" and spec.get("capabilities"):
-        issues.extend(check_capabilities(product_dir))
-        ready, total = count_ready_flows(product_dir)
-        if total < spec.get("fluxos_min", 1):
-            issues.append(f"flows-registry: need at least {spec['fluxos_min']} fluxo(s)")
+    if gate == "G2":
+        if mode == "incremental":
+            if not bc:
+                return False, ["--bc required for incremental G2 validation"]
+            issues.extend(check_capabilities(product_dir, bc))
+            ready, total = count_ready_flows(product_dir, bc)
+            if total < 1:
+                issues.append(f"need at least 1 fluxo for capability {bc}")
+            reg = product_dir / "03-registry/produto.md"
+            if not reg.exists():
+                issues.append("03-registry/produto.md missing")
+            return len(issues) == 0, issues
 
+        issues.extend(check_paths(product_dir, spec.get("paths", [])))
+        if spec.get("capabilities"):
+            issues.extend(check_capabilities(product_dir))
+            ready, total = count_ready_flows(product_dir)
+            if total < spec.get("fluxos_min", 1):
+                issues.append(f"flows-registry: need at least {spec['fluxos_min']} fluxo(s)")
+        return len(issues) == 0, issues
+
+    issues.extend(check_paths(product_dir, spec.get("paths", [])))
     return len(issues) == 0, issues
+
+
+def has_evidence_brief(product_dir: Path) -> bool:
+    return (product_dir / "01-product/00-scan/sintese-evidencias.md").is_file()
+
+
+def suggest_next_command(results: dict[str, dict], product_dir: Path | None = None) -> str:
+    g0 = results.get("G0", {}).get("pass", False)
+    g1 = results.get("G1", {}).get("pass", False)
+    g2 = results.get("G2", {}).get("pass", False)
+    g2_issues = results.get("G2", {}).get("issues", [])
+
+    if not g0:
+        return "/domain.init {produto}  # completar primeiro scan (G0)"
+    if product_dir is not None and g0 and not has_evidence_brief(product_dir):
+        return "/domain.init {produto}  # completar síntese (Fase 0c)"
+    if not g1:
+        return "/domain.discover {produto}  # lacunas + descoberta DDD (G1)"
+    if not g2:
+        if any("design-tatico" in i for i in g2_issues):
+            return "/domain.capability {bc}  # tático pendente"
+        if any("fluxo" in i.lower() or "flows" in i.lower() for i in g2_issues):
+            return "/domain.flow {NN}  # fluxo pendente"
+        if any("integracao" in i or "contextos" in i for i in g2_issues):
+            return "/domain.model {produto}  # integração pendente"
+        return "/domain.model {produto} --finalize  # fechar G2"
+    return "/arch.route {produto}  # G2 ok — handoff arch-kit"
 
 
 def main() -> int:
@@ -126,7 +194,10 @@ def main() -> int:
     parser.add_argument("--hub", type=Path, default=Path.cwd(), help="Hub root")
     parser.add_argument("--product", required=True, help="Product slug")
     parser.add_argument("--gate", choices=["G0", "G1", "G2", "all"], default="all")
+    parser.add_argument("--mode", choices=["full", "minimal", "incremental"], default="full")
+    parser.add_argument("--bc", default=None, help="Bounded context slug (incremental G2)")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--suggest", action="store_true", help="Print suggested next command")
     args = parser.parse_args()
 
     product_dir = args.hub / "products" / args.product
@@ -142,17 +213,22 @@ def main() -> int:
     gates = ["G0", "G1", "G2"] if args.gate == "all" else [args.gate]
     results = {}
     for g in gates:
-        ok, issues = validate_gate(product_dir, g, status)
+        ok, issues = validate_gate(product_dir, g, status, mode=args.mode, bc=args.bc)
         results[g] = {"pass": ok, "issues": issues}
 
+    next_cmd = suggest_next_command(results, product_dir).replace("{produto}", args.product)
+
     if args.json:
-        print(json.dumps(results, indent=2, ensure_ascii=False))
+        payload = {"gates": results, "suggestedNextCommand": next_cmd}
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
     else:
         for g, r in results.items():
             mark = "PASS" if r["pass"] else "FAIL"
             print(f"{g} ({GATES[g]['name']}): {mark}")
             for i in r["issues"]:
                 print(f"  - {i}")
+        if args.suggest or args.gate == "all":
+            print(f"Suggested next: {next_cmd}")
 
     all_ok = all(r["pass"] for r in results.values())
     return 0 if all_ok else 1

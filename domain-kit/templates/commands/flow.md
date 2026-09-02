@@ -1,11 +1,13 @@
 ---
 name: domain-flow
-description: Modela um fluxo entregável (fluxo-NN) por sessão conversacional.
+description: Um fluxo entregável (fluxo-NN) — perguntas inline, plan mode.
 ---
 
 ## Explain to user
 
-Vou trabalhar **um fluxo** por vez: validar dependências, perguntar o que falta, propor o MD do fluxo e atualizar o registry. Confirme antes de gravar.
+Trabalho **um fluxo** por vez: deps, perguntas se faltar contexto, rascunho do MD. **Só gravo no hub após seu OK.**
+
+Contrato: [plan-mode.md](../../references/plan-mode.md)
 
 ## User Input
 
@@ -18,13 +20,11 @@ Formato: `{NN}` ou `fluxo-{NN}` + produto opcional.
 ## Steps
 
 1. Resolver produto e `fluxo-{NN}`.
-2. Rodar `.domain/scripts/flow_deps.py products/{p} {NN}` — se FAIL, listar deps e parar.
-3. `/domain.clarify flow {NN}` (ou incorporar se já clarificado nesta sessão).
-4. Seguir [fluxos-entregaveis.md](../../wrappers/fluxos-entregaveis.md).
-5. Propor MD em `02-capabilities/{bc}/fluxos/{NN}-{slug}.md`.
-6. Atualizar `fluxos-aplicacao.md` se cross-BC.
-7. Propor D-n → `/domain.decision` ou confirmar existentes.
-8. Atualizar `flows-registry.yml` status `ready`.
-9. Regenerar dashboard; sugerir próximo fluxo desbloqueado.
-
-**Aguardar** "pode gravar" antes de write.
+2. `flow_deps.py` — se FAIL, listar deps e parar.
+3. **Perguntas inline** — [flow.md](../../templates/clarify/flow.md) se ambíguo (máx. 3/turno).
+4. Wrapper [fluxos-entregaveis.md](../../wrappers/fluxos-entregaveis.md).
+5. Propor MD → `.draft/02-capabilities/{bc}/fluxos/{NN}-{slug}.md` + preview chat.
+6. Propor updates registry / `fluxos-aplicacao.md` / D-n como drafts.
+7. **Aguardar OK** → promote todos; `flows-registry.yml` status `ready`.
+8. **Changelog** — [changelog.md](../../templates/clarify/changelog.md) → append em `CHANGELOG.md`; exibir no checkpoint.
+9. Regenerar dashboard; sugerir próximo fluxo.

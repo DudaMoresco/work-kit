@@ -7,6 +7,12 @@ PRODUCT="${1:-}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GEN="${SCRIPT_DIR}/generate_domain_dashboard.py"
+REQ="${SCRIPT_DIR}/requirements.txt"
+
+if [[ -f "${REQ}" ]] && ! python3 -c "import markdown" 2>/dev/null; then
+  echo "Installing dashboard dependencies (${REQ})..." >&2
+  python3 -m pip install -q -r "${REQ}"
+fi
 
 if [[ -z "${PRODUCT}" ]]; then
   echo "Usage: regenerate_dashboard.sh products/{produto-slug}" >&2

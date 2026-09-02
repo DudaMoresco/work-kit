@@ -10,17 +10,20 @@ Placeholders: `{produto}`, `{bc}`, `{iniciativa}`.
 
 | Camada | Comandos |
 | --- | --- |
-| Meta | `workkit.init`, `domain.init`, `domain.scan`, `domain.clarify`, `domain.status` |
+| Hub | `domain.install` (`workkit.init` deprecado) |
+| Meta | `domain.init`, `domain.scan`, `domain.status` |
 | Macro | `domain.discover`, `domain.model` |
 | Micro | `domain.flow`, `domain.capability`, `domain.decision` |
 
-Wrappers: [`../wrappers/`](../wrappers/) — não editar skills DDD originais.
+Guia prático: [`../COMMAND-GUIDE.md`](../COMMAND-GUIDE.md) · Estágios e identificação: [`discovery-workflow.md`](discovery-workflow.md)
 
 ---
 
-## Scan (G0) — antes do discover
+## Ingestão de fontes (G0) — fase 0 do init
 
 Ver [`../wrappers/scan-github.md`](../wrappers/scan-github.md). Saída: `01-product/00-scan/`.
+
+Plan + Execute + curadoria rodam em **`/domain.init`** (primeiro scan). **`/domain.scan`** é re-sync quando repos/docs mudaram.
 
 ---
 
@@ -28,10 +31,12 @@ Ver [`../wrappers/scan-github.md`](../wrappers/scan-github.md). Saída: `01-prod
 
 ```mermaid
 flowchart TB
-  subgraph meta [Meta]
+  subgraph hub [Hub]
+    INS[domain.install]
+  end
+  subgraph meta [Meta produto]
     INIT[domain.init]
-    SCAN[domain.scan]
-    CL[domain.clarify]
+    SCAN[domain.scan re-sync]
   end
   subgraph discover ["/domain.discover"]
     S1[1 Estratégico]
@@ -40,6 +45,9 @@ flowchart TB
     S3[3 UL + BCs]
     S5b[5b Cenários opcional]
   end
+  subgraph initPhase ["/domain.init fase 0"]
+    F0[Fontes + curadoria → G0]
+  end
   subgraph model ["/domain.model"]
     S4[4 Integração]
     S6[6 Requisitos]
@@ -47,7 +55,13 @@ flowchart TB
     FL[Fluxos entregáveis]
     REG[Registry D-n]
   end
-  EN[Enunciado / dor] --> S1
+  EN[Enunciado / dor] --> F0
+  INS --> INIT
+  INIT --> F0
+  F0 --> DISC[domain.discover]
+  SCAN -.-> F0
+  INIT --> DISC
+  DISC --> S1
   S1 --> S2
   S1 --> S3
   S2 --> S5
@@ -75,9 +89,13 @@ flowchart TB
 
 ---
 
-## `/domain.discover` — Estágios 1–5
+## `/domain.discover` — Estágios 1–5 (1 estágio por sessão)
 
 Objetivo: **entender o negócio** e fechar **fronteiras de linguagem** (BCs).
+
+**Antes de artefatos DDD:** fase 0c no init (`sintese-evidencias.md`); fase 0b no discover (perguntas só sobre lacunas).
+
+**Não empilhar** estratégico + stories + ES + BCs na mesma conversa. Usar `--stage` ou deixar `auto` escolher o próximo pendente.
 
 ### Estágio 1 — Design estratégico
 
@@ -212,7 +230,8 @@ Regra oficina: **1 fluxo entregável = 1 unidade de entrega** (vira 1 Tech Story
 | Skill | Artefato | Quando |
 | --- | --- | --- |
 | `fluxogramas-decisao` | `02-capabilities/{bc}/fluxogramas-decisao/` | Sistema já existe; documentar regras atuais |
-| `database-model` | `04-platform/02-data/02-database-model.md` | Significado de entidades no código legado |
+
+**Fora do domain-kit:** `database-model` (skill **arch-kit**) — persistência física em `04-platform/02-data/02-database-model.md`; ver [INVENTORY.md](../INVENTORY.md).
 
 Não misturar as-is com to-be no mesmo arquivo sem seções claras.
 
@@ -239,7 +258,7 @@ Emitir handoff **H2** para `/arch.route`.
 | --- | --- | --- |
 | **full** | Produto novo, domínio rico | — |
 | **minimal** | CRUD simples, 1 BC | ES opcional; stories opcional |
-| **as-is-first** | Legado | Começar fluxogramas + database-model; to-be depois |
+| **as-is-first** | Legado | Começar `fluxogramas-decisao`; to-be no domain-kit; `database-model` no arch-kit |
 | **incremental** | Nova capability em produto existente | Só `{bc}` novo: tático + fluxos + D-n delta |
 
 Declarar modo no início do comando.

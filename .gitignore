@@ -20,3 +20,11 @@ venv/
 *.egg-info/
 dist/
 build/
+
+# domain-kit sandbox (regenerate via bootstrap-test-hub.sh)
+domain-kit/test-hub/.cursor/
+domain-kit/test-hub/.domain/
+domain-kit/test-hub/products/
+domain-kit/test-hub/initiatives/
+domain-kit/test-hub/dashboard.html
+domain-kit/test-hub/MANIFEST.md

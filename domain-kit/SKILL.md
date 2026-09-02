@@ -1,33 +1,43 @@
 ---
 name: domain-kit
 description: >-
-  Orquestra mapeamento de negócio no architecture-hub: init, scan, clarify,
-  discover, model, flow por fluxo. Use for domain mapping, DDD, bounded contexts.
+  Mapeamento negócio→domínio no hub: plan mode, install/init/discover/model.
+  Sem clarify separado.
 disable-model-invocation: true
 ---
 
 # Domain-Kit
 
-Framework para **negócio → domínio** no architecture-hub.
+- [COMMAND-GUIDE.md](COMMAND-GUIDE.md) · [GUIDE.md](GUIDE.md) · [references/plan-mode.md](references/plan-mode.md)
 
-- [GUIDE.md](GUIDE.md) — usuário
-- [ONBOARDING.md](ONBOARDING.md) — setup
-- [HOW-IT-WORKS.md](HOW-IT-WORKS.md) — internals
-- [wrappers/](wrappers/) — contratos (**não editar** skills DDD originais)
+## Pipeline
+
+```text
+domain.install → domain.init (G0 + síntese) → domain.discover (G1) → domain.flow … → domain.model --finalize (G2)
+```
+
+## Plan mode (regra #1)
+
+```text
+Propor → .draft/ + chat → OK do usuário → path canônico
+```
+
+- **Sem `/domain.clarify`** — perguntas inline no comando ativo
+- **Scan + síntese (G0)** — fases 0 e 0c de `/domain.init`; `/domain.scan` = re-sync + refresh síntese
+- **Changelog obrigatório** — todo scan ou mudança significativa → entrada em `products/{p}/CHANGELOG.md` ([changelog.md](templates/clarify/changelog.md))
+- **`/workkit.init`** — deprecado; use `/domain.install`
 
 ## Comandos
 
-| Camada | Comando |
+| Comando | Plan mode |
 | --- | --- |
-| Meta | `workkit.init`, `domain.init`, `domain.scan`, `domain.clarify`, `domain.status` |
-| Macro | `domain.discover`, `domain.model --finalize` |
-| Micro | `domain.flow`, `domain.capability`, `domain.decision` |
+| `domain.init` | Scan + índices draft-first |
+| `domain.discover` | DDD draft-first |
+| `domain.flow` | Fluxo MD draft-first |
+| `domain.capability` | Tático draft-first |
+| `domain.model` | Integração / RF draft-first |
+| `domain.decision` | D-n draft-first |
 
-## Regras
+Helper: `.domain/scripts/promote_draft.py`, `adopt_product.py`
 
-1. Ler **wrapper**; skill original read-only
-2. **Clarify** + confirmar antes de gravar
-3. **Scan** cita fontes; GitHub MCP / GitLab-Confluence fallback manual
-4. Regenerar dashboard após mudanças
-
-Instalação: `bash domain-kit/scripts/install-domain-kit.sh {hub}`
+Instalação: `/domain.install` ou `bash domain-kit/scripts/install-domain-kit.sh {hub}`

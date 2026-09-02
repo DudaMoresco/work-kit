@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install domain-kit into architecture-hub (workkit.init).
+# Install domain-kit into architecture-hub (domain.install).
 #
 # Usage:
 #   bash install-domain-kit.sh /path/to/architecture-hub
@@ -57,7 +57,8 @@ PY
 }
 
 # Meta + macro + micro commands
-install_command_skill "workkit-init" "workkit-init"
+install_command_skill "domain-install" "domain-install"
+install_command_skill "workkit-init" "workkit-init"  # deprecated alias
 for cmd in init scan clarify status discover model flow capability decision; do
   install_command_skill "${cmd}" "domain-${cmd}"
 done
@@ -69,10 +70,13 @@ cp "${KIT_ROOT}/SKILL.md" "${CURSOR_SKILLS}/domain-kit/SKILL.md"
 # .domain scripts and config
 cp "${KIT_ROOT}/scripts/"*.py "${DOMAIN_DIR}/scripts/"
 cp "${KIT_ROOT}/scripts/regenerate_dashboard.sh" "${DOMAIN_DIR}/scripts/"
+cp "${KIT_ROOT}/scripts/start_plantuml_server.sh" "${DOMAIN_DIR}/scripts/"
+cp "${KIT_ROOT}/scripts/requirements.txt" "${DOMAIN_DIR}/scripts/" 2>/dev/null || true
 chmod +x "${DOMAIN_DIR}/scripts/"*.py "${DOMAIN_DIR}/scripts/"*.sh 2>/dev/null || true
 
 cp "${KIT_ROOT}/templates/config.yml" "${DOMAIN_DIR}/config.yml"
 cp "${KIT_ROOT}/templates/clarify/"*.md "${DOMAIN_DIR}/clarify/"
+# includes scan-discover.md (scan wizard Plan phase)
 
 # Symlink or note path to wrappers (stay in skills pack)
 WRAPPERS_LINK="${DOMAIN_DIR}/wrappers"
@@ -89,7 +93,7 @@ from pathlib import Path
 
 status = {
     "checkedAt": datetime.now(timezone.utc).isoformat(),
-    "note": "Configure MCPs in Cursor Settings. GitHub used by domain.scan.",
+    "note": "Configure MCPs in Cursor Settings. GitHub used by domain.init and domain.scan.",
     "recommended": ["user-github", "user-plantuml"],
     "optional": ["user-Notion"],
     "manualFallback": ["gitlab via glab/imports", "confluence via exports"],
@@ -101,7 +105,9 @@ PY
 echo ""
 echo "Domain-kit installed in ${HUB_ROOT}"
 echo "  .domain/scripts/regenerate_dashboard.sh products/{produto}"
-echo "  Commands: /workkit.init (done), /domain.init, /domain.scan, ..."
+echo "  .domain/scripts/start_plantuml_server.sh  # PlantUML preview (porta 8765)"
+echo "  Commands: /domain.install (done), /domain.init, /domain.scan, ..."
+echo "  Deprecated alias: /workkit.init"
 echo "  Docs: ${KIT_ROOT}/GUIDE.md"
 echo ""
 echo "Skills DDD originais em ~/.cursor/skills/ NÃO foram alteradas."

@@ -183,7 +183,9 @@ ENUNCIADO
 Ordem sugerida pelo framework (igual ao que aconteceu na prática):
 
 ```bash
-/domain.discover oficina-mecanica --initiative tech-challenge-fase1
+/domain.install oficina-mecanica
+/domain.init oficina-mecanica --initiative tech-challenge-fase1
+/domain.discover oficina-mecanica
 /domain.model oficina-mecanica
 # → H2 → /arch.route
 ```

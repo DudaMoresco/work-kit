@@ -1,11 +1,13 @@
 ---
 name: domain-capability
-description: Design tático DDD de um bounded context.
+description: Design tático de um BC — perguntas inline, plan mode.
 ---
 
 ## Explain to user
 
-Vou modelar **um BC**: camadas, agregados e README da capability. Uma sessão, com confirmação antes de gravar.
+Modelo **um BC**: agregados, camadas, README. Rascunho primeiro; hub só após OK.
+
+Contrato: [plan-mode.md](../../references/plan-mode.md)
 
 ## User Input
 
@@ -17,9 +19,11 @@ $ARGUMENTS
 
 ## Steps
 
-1. Validar BC em `bounded-contexts.md`.
-2. clarify bc {bc} se termos/fronteiras ambíguos.
-3. Seguir [ddd-design-tatico.md](../../wrappers/ddd-design-tatico.md).
-4. Gravar após confirmação.
-5. Atualizar `domain-status.json` model.capabilities[{bc}].
-6. Regenerar dashboard.
+1. Validar BC em `bounded-contexts.md` (promovido).
+2. **Perguntas inline** se termos/fronteiras ambíguos (máx. 3/turno).
+3. Wrapper [ddd-design-tatico.md](../../wrappers/ddd-design-tatico.md).
+4. Draft `design-tatico.md` + `README.md` em `.draft/02-capabilities/{bc}/`.
+5. Preview chat → **aguardar OK** → promote.
+6. **Changelog** — [changelog.md](../../templates/clarify/changelog.md) → append em `CHANGELOG.md`; exibir no checkpoint.
+7. Atualizar `domain-status.json` após promote.
+8. Regenerar dashboard.

@@ -27,9 +27,9 @@ O agente deve:
 | [ddd-design-tatico.md](ddd-design-tatico.md) | `ddd-design-tatico` | model, capability |
 | [levantamento-requisitos.md](levantamento-requisitos.md) | `levantamento-requisitos` | model |
 | [fluxos-entregaveis.md](fluxos-entregaveis.md) | `fluxogramas-decisao` / fluxos | flow, model |
-| [scan-github.md](scan-github.md) | MCP user-github | scan |
-| [scan-gitlab.md](scan-gitlab.md) | glab / dalvito / manual | scan |
-| [scan-confluence.md](scan-confluence.md) | imports / futuro MCP | scan |
+| [scan-github.md](scan-github.md) | MCP user-github | discover (fase 0), scan (re-sync) |
+| [scan-gitlab.md](scan-gitlab.md) | glab / dalvito / manual | discover (fase 0), scan (re-sync) |
+| [scan-confluence.md](scan-confluence.md) | imports / futuro MCP | discover (fase 0), scan (re-sync) |
 
 ---
 

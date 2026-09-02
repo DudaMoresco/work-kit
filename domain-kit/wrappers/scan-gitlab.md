@@ -2,7 +2,7 @@
 
 **Skill original:** N/A — GitLab via CLI/API ou import manual
 
-**Invocada por:** `/domain.scan`
+**Invocada por:** `/domain.discover` (fase 0), `/domain.scan` (re-sync opcional)
 
 **Opções (ordem):**
 1. `glab api` / REST se token configurado

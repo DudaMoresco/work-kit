@@ -1,11 +1,13 @@
 ---
 name: domain-decision
-description: Registra decisão de produto D-n no registry.
+description: Registra D-n — preview obrigatório, promote após OK.
 ---
 
 ## Explain to user
 
-Vou propor uma linha D-n (tema, decisão, evidência) para `03-registry/produto.md`. Confirme o texto antes de gravar.
+Proponho linha D-n para o registry. Preview no chat e em `.draft/` — gravo em `produto.md` só após OK.
+
+Contrato: [plan-mode.md](../../references/plan-mode.md)
 
 ## User Input
 
@@ -15,11 +17,10 @@ $ARGUMENTS
 
 ## Steps
 
-1. Alocar próximo ID D-n (ler registry existente).
-2. Capturar: capability, tema, status (`proposta`|`aceita`), texto, path evidência.
-3. Apresentar preview markdown.
-4. Gravar após confirmação.
-5. Incrementar `domain-status.json` registry.decisoesProduto.
-6. Regenerar dashboard.
-
-Template: `architecture-hub/_conventions/decisao-template.md`
+1. Alocar próximo D-n.
+2. Capturar: capability, tema, status, texto, evidência.
+3. Draft append em `.draft/03-registry/produto.md` (ou patch preview).
+4. Preview markdown no chat.
+5. **Aguardar OK** → promote / merge em registry canônico.
+6. **Changelog** — [changelog.md](../../templates/clarify/changelog.md) → append em `CHANGELOG.md`; exibir no checkpoint.
+7. Atualizar `domain-status.json`; regenerar dashboard.

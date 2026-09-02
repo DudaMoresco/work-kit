@@ -6,18 +6,18 @@ hub_root: .
 skills_pack: ../work-kit/domain-kit
 
 extensions:
-  before_discover:
-    - command: domain.clarify
-      mode: discover
-      optional: false
-  before_flow:
-    - command: domain.clarify
-      mode: flow
-      optional: false
   after_any:
     - script: regenerate_dashboard.sh
+
+# Servidor PlantUML local para preview de diagramas no dashboard (porta 8765).
+# Subir: .domain/scripts/start_plantuml_server.sh
+# Docs: domain-kit/references/plantuml-dashboard.md
+plantuml:
+  server: http://127.0.0.1:8765
+  port: 8765
 
 guide_paths:
   - domain-kit/GUIDE.md
   - domain-kit/ONBOARDING.md
   - domain-kit/HOW-IT-WORKS.md
+  - domain-kit/references/plan-mode.md

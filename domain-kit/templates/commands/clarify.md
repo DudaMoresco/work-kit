@@ -1,29 +1,28 @@
 ---
 name: domain-clarify
-description: Perguntas guiadas antes de gravar artefatos de domínio; revisão de scan.
+description: >-
+  DEPRECADO para usuários — perguntas e curadoria estão inline nos comandos
+  discover/flow/capability. Use o comando principal.
+disable-model-invocation: true
 ---
 
 ## Explain to user
 
-Vou fazer até 3 perguntas por vez sobre o que ainda não está claro. Só gravo arquivos quando você confirmar "pode gravar".
+**Clarify não é mais um passo separado.** Perguntas e curadoria rodam **dentro** do comando que você já iniciou:
 
-## User Input
+| Quer… | Use |
+| --- | --- |
+| Fontes + descoberta | `/domain.discover` |
+| Um fluxo | `/domain.flow {NN}` |
+| Tático de BC | `/domain.capability {bc}` |
+| Re-sync fontes | `/domain.scan` |
 
-```text
-$ARGUMENTS
-```
+Roteiros em `.domain/clarify/*.md` são bancos internos — o agente carrega automaticamente.
 
-Modo: `discover` | `bc {slug}` | `flow {NN}` | `scan` | `open` (default: discover)
+## Se invocado mesmo assim
 
-## Steps
+1. Identificar comando principal pendente (`discover`, `flow`, …).
+2. Redirecionar: *"Continue com `/domain.{comando}` — clarify está inline."*
+3. Não duplicar perguntas já feitas na sessão.
 
-1. Carregar banco em `.domain/clarify/{modo}.md` ou `domain-kit/templates/clarify/`.
-2. Ler contexto: scan-manifest, abertos.md, flows-registry, produto ativo.
-3. Fazer **máximo 3 perguntas** por turno.
-4. Registrar respostas pendentes em `01-product/02-domain/abertos.md`.
-5. Modo `scan`: para cada finding — incorporar / ignorar / pendente.
-6. **Não gravar** artefatos canônicos neste comando (só abertos + notas).
-
-## Regra
-
-Se usuário confirmar incorporação de scan → indicar próximo comando (`discover` ou artefato específico).
+Ver [plan-mode.md](../../references/plan-mode.md).

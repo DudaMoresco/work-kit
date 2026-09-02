@@ -141,6 +141,49 @@ blockers: []  # ex.: "BC estoque sem agregado definido"
 - Domain Stories (linkar)
 - Fluxogramas as-is (só se legado)
 
+### Fronteira domain-kit ↔ arch-kit (H2)
+
+O **domain-kit** entrega **modelo de negócio** implementável: BCs, integração conceitual, design tático por capability, fluxos to-be e decisões D-n de produto. O **arch-kit** assume **decisões e documentação técnica** a partir daí.
+
+| Tema | Dono | Path típico | Skill / comando |
+| --- | --- | --- | --- |
+| Desafio, UL, BCs, discovery | domain-kit | `01-product/` | `/domain.discover` |
+| Integração entre BCs (ACL, orquestração) | domain-kit | `01-product/04-integration/` | `/domain.model` |
+| Design tático (agregados, invariantes) | domain-kit | `02-capabilities/{bc}/design-tatico.md` | `/domain.capability` |
+| Fluxos entregáveis to-be | domain-kit | `02-capabilities/{bc}/fluxos/` | `/domain.flow` |
+| Requisitos RF/RNF (negócio) | domain-kit | `04-platform/01-non-functional/01-requisitos.md` | `/domain.model --finalize` |
+| Decisões produto D-n | domain-kit | `03-registry/produto.md` | `/domain.decision` |
+| Fluxogramas as-is (legado) | domain-kit | `02-capabilities/{bc}/fluxogramas-decisao/` | skill `fluxogramas-decisao` |
+| **Modelo de dados físico (stores, colunas, índices)** | **arch-kit** | `04-platform/02-data/02-database-model.md` | skill **`database-model`** |
+| Database design / DDL / migrações | arch-kit | `04-platform/02-data/01-database-design.md` | `/arch.architect` |
+| Estilo, HLD/C4, ADRs, stack | arch-kit | `04-platform/03-architecture/`, `04-adr/` | `/arch.route`, `/arch.architect` |
+| Decisões plataforma D-n | arch-kit | `03-registry/plataforma.md` | ADR / RFC |
+
+**Regra:** `database-model` **não** é skill do domain-kit. Persistência física exige visão de infra e código — entra no arch-kit após H2, tipicamente junto com database design (Gate G3). Ver [domain-kit/INVENTORY.md](../domain-kit/INVENTORY.md).
+
+**Modo as-is-first:** domain-kit documenta regras legadas via `fluxogramas-decisao`; arch-kit documenta schema legado via `database-model` quando o sistema já existe.
+
+### Entradas do arch-kit após H2
+
+```yaml
+handoff: H2
+arch_kit_starts_with:
+  inputs_from_domain:
+    - bounded_contexts
+    - integracao_contextos
+    - design_tatico_por_bc
+    - fluxos_entregaveis
+    - requisitos_rf_rnf
+    - registry_produto
+  arch_kit_produces:
+    - path: products/{produto}/04-platform/02-data/01-database-design.md
+    - path: products/{produto}/04-platform/02-data/02-database-model.md
+      skill: database-model
+      note: as-is a partir de código legado ou to-be após database design
+    - path: products/{produto}/04-platform/03-architecture/
+    - path: products/{produto}/03-registry/plataforma.md
+```
+
 ### Checklist para `/arch.route`
 
 - [ ] Rodar diagnóstico de estágio → `rota-decisao.md`
@@ -165,7 +208,7 @@ Estilo, stack, HLD/LLD, C4 mínimo (C1–C2), ADRs das decisões estruturais, co
 | G3.2 | ADR estilo + stack | `04-adr/0001-…`, `0002-…` status Aceito |
 | G3.3 | HLD + LLD | `hld.md`, `lld.md` |
 | G3.4 | C4 C1 + C2 (C3 por BC conforme story) | `c4/01-contexto.md`, `02-conteineres.md` |
-| G3.5 | Database design | `04-platform/02-data/01-database-design.md` |
+| G3.5 | Database design + modelo físico | `04-platform/02-data/01-database-design.md`, `02-database-model.md` (skill `database-model`) |
 | G3.6 | Contratos eventos | `03-architecture/02-contratos-eventos.md` |
 | G3.7 | Constitution derivada | `04-platform/05-constitution.md` |
 | G3.8 | Registry plataforma | `03-registry/plataforma.md` (D-34…D-36) |
@@ -320,7 +363,7 @@ Deps entre stories = grafo dentro do delivery-kit; gates G4 verificam por nó.
 | `/domain.discover` | domain | `ddd-design-estrategico`, `event-storming`, `domain-storytelling` |
 | `/domain.model` | domain | `ddd-linguagem-e-contextos`, `ddd-design-tatico`, `fluxos-entregaveis` |
 | `/arch.route` | arch | `architecture-decision-master` |
-| `/arch.architect` | arch | `architecture-style-tradeoffs`, `hld-lld-solution-design`, `c4-architecture-docs`, `architecture-decision-record` |
+| `/arch.architect` | arch | `architecture-style-tradeoffs`, `hld-lld-solution-design`, `c4-architecture-docs`, `architecture-decision-record`, `database-model` |
 | `/delivery.backlog` | delivery | `criacao-atividades-master`, `descricao-atividade-implementacao` |
 | `/delivery.handoff` | delivery | gera `hub-evidence.yml` + stub spec para story #NN |
 

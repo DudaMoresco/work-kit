@@ -19,8 +19,9 @@ Setup para **novo desenvolvedor** ou **novo produto** no architecture-hub.
 # Monorepo work-hub (architecture-hub + work-kit lado a lado):
 bash ../work-kit/domain-kit/scripts/install-domain-kit.sh /path/to/architecture-hub
 
-# Ou após clone em ~/.cursor/skills/work-kit:
-bash ~/.cursor/skills/work-kit/domain-kit/scripts/install-domain-kit.sh /path/to/architecture-hub
+# Ou após clone do repositório:
+git clone https://github.com/DudaMoresco/work-kit.git
+bash work-kit/domain-kit/scripts/install-domain-kit.sh /path/to/architecture-hub
 ```
 
 O script:

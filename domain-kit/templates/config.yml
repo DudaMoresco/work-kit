@@ -2,7 +2,7 @@
 
 hub_root: .
 # Monorepo work-hub: ../work-kit/domain-kit
-# Clone standalone: ~/.cursor/skills/work-kit/domain-kit
+# Clone standalone: /path/to/work-kit/domain-kit
 skills_pack: ../work-kit/domain-kit
 
 extensions:

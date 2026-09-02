@@ -1,0 +1,91 @@
+# Gates entre domain-kit, arch-kit, delivery-kit e spec-kit
+# Usado por validate_gate.py (futuro). Paths relativos a architecture-hub/
+
+version: 1
+product_example: oficina-mecanica
+initiative_example: tech-challenge-fase1
+
+gates:
+  G1:
+    name: Pronto para modelar (domain)
+    kit: domain-kit
+    handoff: H1
+    requires:
+      - path: products/{produto}/01-product/01-vision/01-design-estrategico.md
+        min_status: draft
+      - path: products/{produto}/01-product/03-discovery/
+        type: directory_nonempty
+      - path: products/{produto}/01-product/02-domain/desafio-negocio.md
+        min_status: ready
+
+  G2:
+    name: Pronto para arquitetura (domain → arch)
+    kit: arch-kit
+    handoff: H2
+    requires:
+      - path: products/{produto}/01-product/02-domain/bounded-contexts.md
+      - path: products/{produto}/01-product/04-integration/01-contextos.md
+      - path: products/{produto}/04-platform/01-non-functional/01-requisitos.md
+      - path: products/{produto}/03-registry/produto.md
+      - path: products/{produto}/02-capabilities/
+        type: capabilities_with_tatico
+    capabilities_min: 1
+
+  G3:
+    name: Pronto para backlog (arch → delivery)
+    kit: delivery-kit
+    handoff: H3
+    requires:
+      - path: products/{produto}/04-platform/03-architecture/estilo.md
+      - path: products/{produto}/04-platform/03-architecture/hld.md
+      - path: products/{produto}/04-platform/03-architecture/lld.md
+      - path: products/{produto}/04-platform/03-architecture/c4/01-contexto.md
+      - path: products/{produto}/04-platform/03-architecture/c4/02-conteineres.md
+      - path: products/{produto}/04-platform/03-architecture/02-contratos-eventos.md
+      - path: products/{produto}/04-platform/02-data/01-database-design.md
+      - path: products/{produto}/04-platform/05-constitution.md
+      - path: products/{produto}/03-registry/plataforma.md
+      - path: products/{produto}/04-platform/04-adr/
+        type: adr_accepted_min
+        count: 1
+    optional:
+      - path: products/{produto}/04-platform/03-architecture/das.md
+
+  G4:
+    name: Story pronta para handoff (delivery interno)
+    kit: delivery-kit
+    handoff: H4
+    per_story: true
+    requires:
+      - path: initiatives/{iniciativa}/03-backlog/{story_file}
+      - fields:
+          - objetivo
+          - criterios_aceite
+          - spec_kit_path
+          - decisoes
+      - deps_resolved: true
+
+  G5:
+    name: Pronto para spec-kit (delivery → spec)
+    kit: spec-kit
+    handoff: H5
+    requires:
+      - path: "{repo}/specs/{spec_id}/hub-evidence.yml"
+      - path: "{repo}/.specify/hub-paths.yml"
+      - path: "{repo}/.specify/memory/constitution.md"
+      - gate: G4
+        for_story: "{backlog_story}"
+
+story_evidence_matrix:
+  bootstrap:
+    stories: [1, 2]
+    read_keys: [estilo, adr_0001, adr_0002, constitution, database_design]
+  bc_domain:
+    stories: [3, 4, 5, 6, 7, 8, 9, 10]
+    read_keys: [design_tatico, database_design]
+  orchestration:
+    stories: [11, 12, 13, 14, 15, 16, 17]
+    read_keys: [fluxos, fluxos_aplicacao, contratos_eventos, design_tatico]
+  cross_cutting:
+    stories: [18, 19, 20, 21]
+    read_keys: [constitution, requisitos, adr_0002]

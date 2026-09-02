@@ -1,0 +1,25 @@
+# Template sources.yml — copiar para products/{produto}/sources.yml
+
+version: 1
+product: "{produto}"
+initiative: "{iniciativa}"  # opcional
+
+sources:
+  github: []
+  # - repo: org/repo
+  #   paths: [README.md, docs/]
+  #   purpose: visão produto
+
+  gitlab: []
+  # - project: group/subgroup/repo
+  #   paths: [README.md]
+  #   purpose: docs legados
+
+  confluence: []
+  # - space: PROD
+  #   pages: [123456789]
+  #   purpose: requisitos negócio
+
+  manual: []
+  # - path: initiatives/{iniciativa}/01-enunciado.md
+  #   purpose: enunciado oficial

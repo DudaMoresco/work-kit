@@ -1,0 +1,23 @@
+# Domain-kit — configuração do hub
+
+hub_root: .
+# Monorepo work-hub: ../work-kit/domain-kit
+# Clone standalone: ~/.cursor/skills/work-kit/domain-kit
+skills_pack: ../work-kit/domain-kit
+
+extensions:
+  before_discover:
+    - command: domain.clarify
+      mode: discover
+      optional: false
+  before_flow:
+    - command: domain.clarify
+      mode: flow
+      optional: false
+  after_any:
+    - script: regenerate_dashboard.sh
+
+guide_paths:
+  - domain-kit/GUIDE.md
+  - domain-kit/ONBOARDING.md
+  - domain-kit/HOW-IT-WORKS.md

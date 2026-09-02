@@ -1,0 +1,78 @@
+# Gates do domain-kit
+# Complementa work-kit/references/gates.yml (G1, G2)
+
+version: 1
+kit: domain-kit
+
+gates:
+  G0:
+    name: Scan (opcional)
+    command: domain.scan
+    optional: true
+    requires:
+      - field: domain-status.json scan in [complete, partial, skipped]
+      - or_path: products/{produto}/01-product/00-scan/scan-manifest.json
+
+  G1:
+    name: Fim do discover — pronto para model
+    command: domain.discover
+    handoff: H1
+    requires:
+      - path: products/{produto}/01-product/01-vision/01-design-estrategico.md
+      - path: products/{produto}/01-product/02-domain/bounded-contexts.md
+      - path: products/{produto}/01-product/02-domain/desafio-negocio.md
+      - path: products/{produto}/01-product/02-domain/linguagem-ubiqua.md
+    requires_one_of:
+      - path: products/{produto}/01-product/03-discovery/01-event-storming/
+        type: directory_nonempty
+      - path: products/{produto}/01-product/03-discovery/02-domain-storytelling/
+        type: directory_min_files
+        count: 2
+
+  G2:
+    name: Fim do model — pronto para arch-kit
+    command: domain.model
+    handoff: H2
+    requires:
+      - path: products/{produto}/01-product/04-integration/01-contextos.md
+      - path: products/{produto}/04-platform/01-non-functional/01-requisitos.md
+      - path: products/{produto}/03-registry/produto.md
+      - path: products/{produto}/02-capabilities/
+        type: capabilities_complete
+    capabilities_complete:
+      per_bc:
+        - README.md
+        - design-tatico.md
+      fluxos_min: 1
+    optional:
+      - path: products/{produto}/02-capabilities/ordem-de-servico/fluxos-aplicacao.md
+        note: obrigatório se orquestração cross-BC
+
+modes:
+  full:
+    skip: []
+  minimal:
+    skip:
+      - domain_storytelling
+      - scenario_tables
+    g1_relaxed:
+      event_storming_or_stories: false
+  incremental:
+    scope: single_bc
+    g2_checks:
+      - design_tatico_for_bc
+      - fluxos_for_bc
+      - registry_delta_d_n
+
+oficina_fixture:
+  product: oficina-mecanica
+  g1: pass
+  g2: pass
+  bcs:
+    - ordem-de-servico
+    - orcamento
+    - estoque
+    - cadastros
+    - acesso
+  fluxos: 7
+  registry_range: D-01..D-33

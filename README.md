@@ -47,6 +47,8 @@ No monorepo `work-hub`: `architecture-hub` e `work-kit` são pastas irmãs.
 
 Comando Cursor: `/workkit.init`
 
+## Relacionados (monorepo work-hub)
+
 - [estagios-desenvolvimento.md](../skills/estagios-desenvolvimento.md) — pipeline completo de skills
-- [references/hub-paths.md](../skills/references/hub-paths.md) — paths canônicos
+- [hub-paths.md](../skills/references/hub-paths.md) — paths canônicos no hub
 - [spec-kit-dashboard](../skills/spec-kit-dashboard/) — downstream implementação

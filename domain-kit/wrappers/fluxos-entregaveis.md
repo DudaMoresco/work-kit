@@ -1,14 +1,23 @@
-# Wrapper: fluxos entregáveis
+# Wrapper: fluxos operacionais (domain-kit + arch-kit)
 
-**Skill original:** skills `fluxos-entregaveis` / `fluxogramas-decisao` — NÃO editar originais.
+**Invocada por:** `/domain.flow {NN}`
 
-**Invocada por:** `/domain.flow {NN}`, `/domain.model`
+**Pré-condições:** deps de fluxo satisfeitas (`flow_deps.py`); fases Estratégico + Descoberta PASS
 
-**Pré-condições:** deps de fluxo satisfeitas (`flows-registry.yml`); clarify flow ok
+## Camada negócio (domain-kit — obrigatória)
 
-**Outputs no hub:**
-- `products/{produto}/02-capabilities/{bc}/fluxos/{NN}-{slug}.md`
-- Atualizar seção em `fluxos-aplicacao.md` quando orquestração cross-BC
-- Entrada em `flows-registry.yml` status → `ready`
+- `products/{produto}/01-product/03-operacional/fluxos/{NN}-{slug}.md`
+- Template: `templates/fluxo-operacional.md`
+- Linguagem ubíqua; referências técnicas só em nota "as-is" opcional
+
+## Camada técnica (arch-kit — opcional)
+
+- `products/{produto}/arch/fluxos/{NN}-{slug}-tecnico.md`
+- Sequência de serviços, filas, payloads, idempotência
+
+## Registry
+
+- Atualizar `flows-registry.yml` — `path` aponta para fluxo **operacional** (negócio)
+- Status `ready` quando camada negócio promovida e validada
 
 **Pós-execução:** regenerate dashboard; sugerir próximo fluxo desbloqueado

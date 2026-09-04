@@ -11,4 +11,4 @@
 - `products/{produto}/01-product/02-domain/linguagem-ubiqua.md`
 - `products/{produto}/01-product/02-domain/bounded-contexts.md`
 
-**Pós-execução:** validar Gate G1
+**Pós-execução:** validar fases **Estratégico** e **Descoberta** (`validate_gate.py --phase estrategico|descoberta`)

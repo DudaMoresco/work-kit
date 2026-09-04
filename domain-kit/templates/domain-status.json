@@ -2,12 +2,18 @@
   "product": "{produto}",
   "initiative": "{iniciativa}",
   "updatedAt": null,
-  "phase": "init",
+  "phase": "evidencias",
   "scan": "pending",
+  "phases": {
+    "evidencias": false,
+    "estrategico": false,
+    "descoberta": false,
+    "operacional": false
+  },
   "gates": {
-    "G0": "pending",
-    "G1": "pending",
-    "G2": "pending"
+    "G0": false,
+    "G1": false,
+    "G2": false
   },
   "discover": {
     "evidenceBrief": "pending",
@@ -16,16 +22,21 @@
     "eventStorming": "pending",
     "boundedContexts": "pending"
   },
-  "model": {
-    "integracao": "pending",
+  "operacional": {
     "requisitos": "pending",
-    "capabilities": {},
     "fluxosReady": 0,
     "fluxosTotal": 0
+  },
+  "arch": {
+    "capabilitiesAdopted": [],
+    "integrationAdopted": false
   },
   "registry": {
     "decisoesProduto": 0,
     "abertas": 0
   },
-  "nextSuggested": "/domain.discover"
+  "activeChange": null,
+  "nextSuggested": "/domain.init",
+  "phaseIssues": {},
+  "gateIssues": {}
 }

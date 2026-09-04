@@ -1,13 +1,15 @@
 ---
 name: domain-model
-description: Modelagem — integração, requisitos, finalize G2; modos full/incremental.
+description: Fase Operacional — requisitos NFR de produto e finalize; sem design tático.
 ---
 
 ## Explain to user
 
-Fecho integração, requisitos e (com `--finalize`) valido G2. Cada artefato: **rascunho → preview → OK → hub**.
+Fecho artefatos da **fase Operacional**: requisitos não-funcionais de **produto** (SLA percebido, volume de negócio, compliance) e validação da fase.
 
-Com `--mode incremental`: valido G2 só para `{bc}` novo (tático + fluxos + D-n delta).
+**Não entrega:** design tático, integração técnica, C4, ADR — isso é **arch-kit** após Operacional PASS.
+
+Cada artefato: **rascunho → preview → OK → hub**.
 
 Contrato: [plan-mode.md](../../references/plan-mode.md)
 
@@ -17,27 +19,27 @@ Contrato: [plan-mode.md](../../references/plan-mode.md)
 $ARGUMENTS
 ```
 
-Flags: `--finalize`, `--mode full|incremental`, `--bc {bc}` (obrigatório em incremental)
+Flags: `--finalize`, `--mode full|incremental`
 
 ## Steps
 
+0. Se `activeChange` em `domain-status.json`, citar P-n/E-n no chat e changelog.
+
 ### Sem `--finalize`
 
-- Draft integração ([ddd-integracao-contextos.md](../../wrappers/ddd-integracao-contextos.md)) → OK → promote
-- **Changelog** — após promote: [changelog.md](../../templates/clarify/changelog.md)
-- Sugerir `/domain.capability` e `/domain.flow` pendentes conforme gaps
+- Sugerir `/domain.flow` pendente conforme gaps da fase Operacional
+- Draft requisitos NFR se ausente → OK → promote em `04-platform/01-non-functional/01-requisitos.md`
 
 ### Com `--finalize`
 
 1. Draft requisitos se ausente → OK → promote
 2. Sweep registry D-n (decisions via plan mode)
-3. Validar G2:
-   - `--mode full` (default): `validate_gate.py --gate G2 --product {p}`
-   - `--mode incremental`: `validate_gate.py --gate G2 --product {p} --mode incremental --bc {bc}`
-4. **Changelog** — após cada promote material ou G2: [changelog.md](../../templates/clarify/changelog.md) → append em `CHANGELOG.md`; exibir no checkpoint.
-5. Handoff H2 → `/arch.route`
-6. Regenerar dashboard
+3. Validar fase Operacional: `validate_gate.py --phase operacional --product {p}`
+4. **Changelog** após cada promote material
+5. Refresh `product-README.md` (status por fase, benefícios se NFRs mudaram)
+6. Handoff → `/arch.route` quando Operacional PASS
+7. Regenerar dashboard
 
 **Aguardar OK** para cada artefato antes de promote.
 
-**Não entrega:** arquitetura técnica, C4, ADR, database-model — isso é arch-kit após H2.
+**Integração técnica:** se necessário, propor em `.draft/arch/01-integration/` — não em `01-product/04-integration/` (stub apenas).

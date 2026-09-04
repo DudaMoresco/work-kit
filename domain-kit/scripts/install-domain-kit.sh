@@ -59,7 +59,7 @@ PY
 # Meta + macro + micro commands
 install_command_skill "domain-install" "domain-install"
 install_command_skill "workkit-init" "workkit-init"  # deprecated alias
-for cmd in init scan clarify status discover model flow capability decision; do
+for cmd in init scan clarify status discover model flow capability decision change; do
   install_command_skill "${cmd}" "domain-${cmd}"
 done
 
@@ -71,6 +71,7 @@ cp "${KIT_ROOT}/SKILL.md" "${CURSOR_SKILLS}/domain-kit/SKILL.md"
 cp "${KIT_ROOT}/scripts/"*.py "${DOMAIN_DIR}/scripts/"
 cp "${KIT_ROOT}/scripts/regenerate_dashboard.sh" "${DOMAIN_DIR}/scripts/"
 cp "${KIT_ROOT}/scripts/start_plantuml_server.sh" "${DOMAIN_DIR}/scripts/"
+cp "${KIT_ROOT}/scripts/start_dashboard_server.sh" "${DOMAIN_DIR}/scripts/" 2>/dev/null || true
 cp "${KIT_ROOT}/scripts/requirements.txt" "${DOMAIN_DIR}/scripts/" 2>/dev/null || true
 chmod +x "${DOMAIN_DIR}/scripts/"*.py "${DOMAIN_DIR}/scripts/"*.sh 2>/dev/null || true
 

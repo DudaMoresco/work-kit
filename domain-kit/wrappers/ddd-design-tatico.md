@@ -1,13 +1,13 @@
 # Wrapper: ddd-design-tatico
 
-**Skill original:** `~/.cursor/skills/ddd-design-tatico/SKILL.md` — NÃO editar.
+**Skill original:** design tático DDD — **movido para arch-kit**.
 
-**Invocada por:** `/domain.model`, `/domain.capability {bc}`
+**Invocada por:** `/arch.capability {bc}` (quando arch-kit instalado). **`/domain.capability` está deprecated.**
 
-**Pré-condições:** integração definida (ou BC isolado); `{bc}` confirmado
+**Outputs no hub (arch-kit):**
+- `products/{produto}/arch/{bc}/design-tatico.md`
+- `products/{produto}/arch/{bc}/README.md`
 
-**Outputs no hub:**
-- `products/{produto}/02-capabilities/{bc}/design-tatico.md`
-- `products/{produto}/02-capabilities/{bc}/README.md`
+**Legado:** `02-capabilities/{bc}/design-tatico.md` — marcado em `domain-status.json` → `arch.capabilitiesAdopted`; não bloqueia fase Operacional.
 
-**Pós-execução:** registrar agregados no capability README
+**Domain-kit:** agregados podem aparecer apenas como resultado visual de **event storming** (post-it), sem camadas nem código.

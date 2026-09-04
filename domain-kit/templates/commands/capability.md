@@ -1,13 +1,15 @@
 ---
 name: domain-capability
-description: Design tático de um BC — perguntas inline, plan mode.
+description: "[DEPRECATED → arch-kit] Design tático de um BC — use /arch.capability quando disponível."
 ---
 
 ## Explain to user
 
-Modelo **um BC**: agregados, camadas, README. Rascunho primeiro; hub só após OK.
+**Este comando foi movido para o arch-kit.** O domain-kit foca em modelagem de **problema/negócio** (fases Estratégico, Descoberta, Operacional).
 
-Contrato: [plan-mode.md](../../references/plan-mode.md)
+Design tático (agregados, camadas, ports/adapters) é decisão de **arquitetura** — use `/arch.capability {bc}` quando o arch-kit estiver instalado, ou grave manualmente em `products/{p}/arch/{bc}/design-tatico.md`.
+
+Artefatos legados em `02-capabilities/{bc}/design-tatico.md` são marcados como `arch.capabilitiesAdopted` via `adopt_product.py` e **não bloqueiam** o fechamento da fase Operacional.
 
 ## User Input
 
@@ -15,15 +17,9 @@ Contrato: [plan-mode.md](../../references/plan-mode.md)
 $ARGUMENTS
 ```
 
-`{bc}` slug — ex.: `ordem-de-servico`
-
 ## Steps
 
-1. Validar BC em `bounded-contexts.md` (promovido).
-2. **Perguntas inline** se termos/fronteiras ambíguos (máx. 3/turno).
-3. Wrapper [ddd-design-tatico.md](../../wrappers/ddd-design-tatico.md).
-4. Draft `design-tatico.md` + `README.md` em `.draft/02-capabilities/{bc}/`.
-5. Preview chat → **aguardar OK** → promote.
-6. **Changelog** — [changelog.md](../../templates/clarify/changelog.md) → append em `CHANGELOG.md`; exibir no checkpoint.
-7. Atualizar `domain-status.json` após promote.
-8. Regenerar dashboard.
+1. Informar deprecação e handoff para arch-kit.
+2. Se o usuário insistir: propor conteúdo em `.draft/arch/{bc}/design-tatico.md` (não em `02-capabilities/`).
+3. Atualizar `domain-status.json` → `arch.capabilitiesAdopted` após promote.
+4. **Não** validar G2/operacional com design-tatico.

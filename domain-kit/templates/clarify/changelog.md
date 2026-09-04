@@ -9,9 +9,11 @@ Todo scan ou mudança material no produto **exige** entrada em `products/{p}/CHA
 | Primeiro scan (manifest promovido) | `/domain.init` fase 0 | **Sim** |
 | Re-sync de fontes (manifest ou síntese atualizada) | `/domain.scan` | **Sim** |
 | Síntese de evidências promovida ou refresh material | `/domain.init` 0c, `/domain.scan` | **Sim** |
-| Gate passou (G0, G1, G2) | init, discover, model | **Sim** |
+| Sessão evolutiva aberta | change | **Sim** (P-n / E-n) |
+| Fase passou (Evidências, Estratégico, Descoberta, Operacional) | init, discover, model | **Sim** |
 | Artefato DDD promovido (estratégico, BCs, story, ES, …) | `/domain.discover` | **Sim** |
-| Fluxo, tático, integração, requisitos promovidos | flow, capability, model | **Sim** |
+| Fluxo operacional, requisitos NFR, registry promovidos | flow, model | **Sim** |
+| Design tático ou integração técnica (arch-kit) | arch.capability, arch.integrate | **Sim** |
 | Decisão D-n registrada | `/domain.decision` | **Sim** |
 | Registry atualizado (flows-registry, produto.md) | flow, decision, model | **Sim** |
 | Modo incremental — nova capability | discover/capability/flow/model | **Sim** |
@@ -19,7 +21,7 @@ Todo scan ou mudança material no produto **exige** entrada em `products/{p}/CHA
 | Typo ou formatação sem impacto de domínio | qualquer | **Não** |
 | Dashboard regenerado sem mudança canônica | regenerate | **Não** |
 
-**Mudança significativa** = altera o que o hub considera verdade sobre o produto: findings, síntese, gates, BCs, fluxos, decisões, requisitos ou integração.
+**Mudança significativa** = altera o que o hub considera verdade sobre o produto: findings, síntese, fases, BCs, fluxos, decisões, requisitos ou integração.
 
 ## Onde gravar
 
@@ -38,8 +40,8 @@ Inserir **no topo** do arquivo (abaixo do cabeçalho introdutório), uma seção
 | Campo | Valor |
 | --- | --- |
 | **Comando** | `/domain.scan` |
-| **Tipo** | scan \| discovery \| model \| registry \| gate |
-| **Gate** | G0 \| G1 \| G2 \| — |
+| **Tipo** | scan \| discovery \| model \| registry \| phase \| arch |
+| **Fase** | evidencias \| estrategico \| descoberta \| operacional \| — |
 
 ### O que mudou
 - …
@@ -53,8 +55,8 @@ Inserir **no topo** do arquivo (abaixo do cabeçalho introdutório), uma seção
 
 ### Campos
 
-- **Título curto** — uma linha (ex.: "Re-sync GitHub — 3 findings novos", "BC ordem-de-servico fechado → G1")
-- **O que mudou** — bullets objetivos; citar findings incorporados, artefatos criados/atualizados, gates
+- **Título curto** — uma linha (ex.: "Re-sync GitHub — 3 findings novos", "BC ordem-de-servico fechado → Estratégico PASS")
+- **O que mudou** — bullets objetivos; citar findings incorporados, artefatos criados/atualizados, fases
 - **Impacto** — o que muda para quem lê o hub (discover pendente, novo fluxo, decisão D-n, etc.)
 - **Artefatos afetados** — paths promovidos nesta sessão
 

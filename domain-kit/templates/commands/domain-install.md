@@ -7,7 +7,7 @@ description: Instala domain-kit no architecture-hub — skills, scripts, MCPs (1
 
 Vou instalar scripts, templates e comandos `domain-*` no hub e checar MCPs (GitHub, PlantUML). Skills DDD originais **não** serão alteradas.
 
-Próximo passo típico: **`/domain.init {produto}`** — bootstrap do produto + primeiro scan (Gate G0).
+Próximo passo típico: **`/domain.init {produto}`** — bootstrap do produto + primeiro scan (fase Evidências).
 
 ## Steps
 

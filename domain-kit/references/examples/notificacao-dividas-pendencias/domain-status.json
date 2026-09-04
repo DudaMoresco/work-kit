@@ -1,0 +1,66 @@
+{
+  "product": "notificacao-dividas-pendencias",
+  "initiative": "—",
+  "updatedAt": "2026-09-03T17:43:00+00:00",
+  "phase": "operacional-in-progress",
+  "scan": "complete",
+  "gates": {
+    "G0": true,
+    "G1": true,
+    "G2": false
+  },
+  "discover": {
+    "evidenceBrief": "complete",
+    "estrategico": "complete",
+    "stories": "complete",
+    "eventStorming": "pending",
+    "boundedContexts": "complete"
+  },
+  "model": {
+    "integracao": "complete",
+    "requisitos": "pending",
+    "capabilities": {
+      "orquestracao-de-notificacoes": "complete",
+      "entrega-de-notificacoes": "complete"
+    },
+    "fluxosReady": 0,
+    "fluxosTotal": 0
+  },
+  "registry": {
+    "decisoesProduto": 0,
+    "abertas": 0
+  },
+  "nextSuggested": "/domain.model notificacao-dividas-pendencias --finalize  # requisitos NFR de produto",
+  "adoptedAt": "2026-09-03T18:12:04.077152+00:00",
+  "gateIssues": {
+    "G0": [],
+    "G1": [],
+    "G2": [
+      "04-platform/01-non-functional/01-requisitos.md",
+      "flows-registry: need at least 1 fluxo(s) with status ready"
+    ]
+  },
+  "phases": {
+    "evidencias": true,
+    "estrategico": true,
+    "descoberta": true,
+    "operacional": false
+  },
+  "phaseIssues": {
+    "evidencias": [],
+    "estrategico": [],
+    "descoberta": [],
+    "operacional": [
+      "04-platform/01-non-functional/01-requisitos.md",
+      "flows-registry: need at least 1 fluxo(s) with status ready"
+    ]
+  },
+  "arch": {
+    "capabilitiesAdopted": [
+      "entrega-de-notificacoes",
+      "orquestracao-de-notificacoes"
+    ],
+    "integrationAdopted": true
+  },
+  "activeChange": null
+}

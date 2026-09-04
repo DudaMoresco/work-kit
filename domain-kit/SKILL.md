@@ -1,8 +1,8 @@
 ---
 name: domain-kit
 description: >-
-  Mapeamento negócio→domínio no hub: plan mode, install/init/discover/model.
-  Sem clarify separado.
+  Modelagem de problema e domínio no hub: Evidências → Estratégico → Descoberta → Operacional.
+  Design tático no arch-kit.
 disable-model-invocation: true
 ---
 
@@ -13,8 +13,38 @@ disable-model-invocation: true
 ## Pipeline
 
 ```text
-domain.install → domain.init (G0 + síntese) → domain.discover (G1) → domain.flow … → domain.model --finalize (G2)
+domain.install → domain.init (evidências) → domain.discover (estratégico + descoberta)
+  → domain.flow (operacional) → domain.model --finalize (operacional) → arch.route
 ```
+
+## Fases (substituem gates G0–G2)
+
+| Fase | Pergunta | Artefatos principais |
+| --- | --- | --- |
+| **Evidências** | O que sabemos, com fonte? | sources.yml, scan, síntese |
+| **Estratégico** | Por quê? Onde? Como falamos? | design estratégico, desafio, BCs, UL |
+| **Descoberta** | Como se comporta no tempo? | stories, event storming |
+| **Operacional** | Quais cenários garantir? | fluxos negócio, NFRs produto, D-n |
+| **Arch-kit** | Como implementar? | design tático, integração técnica |
+
+Aliases legados: G0=Evidências, G1=Estratégico+Descoberta, G2=Operacional.
+
+## Cartão central do produto
+
+`products/{p}/product-README.md` — visão PM (2–3 linhas), benefícios, status por fase, índice de artefatos.
+
+Atualizar após promote material em discover (contexts), model (--finalize) e `/domain.change`.
+
+## Evoluções e problemas
+
+| Mecanismo | ID | Arquivo |
+| --- | --- | --- |
+| Entrada de sessão | — | `domain-status.json` → `activeChange` |
+| Problemas / lacunas | P-n | `01-product/02-domain/abertos.md` |
+| Evoluções intencionais | E-n | `01-product/02-domain/evolucoes.md` |
+| Decisões | D-n | `03-registry/produto.md` |
+
+Ritual: `/domain.change` → handoff discover/flow/model/scan/decision. Ver `.domain/clarify/evolucao.md`.
 
 ## Plan mode (regra #1)
 
@@ -22,22 +52,18 @@ domain.install → domain.init (G0 + síntese) → domain.discover (G1) → doma
 Propor → .draft/ + chat → OK do usuário → path canônico
 ```
 
-- **Sem `/domain.clarify`** — perguntas inline no comando ativo
-- **Scan + síntese (G0)** — fases 0 e 0c de `/domain.init`; `/domain.scan` = re-sync + refresh síntese
-- **Changelog obrigatório** — todo scan ou mudança significativa → entrada em `products/{p}/CHANGELOG.md` ([changelog.md](templates/clarify/changelog.md))
-- **`/workkit.init`** — deprecado; use `/domain.install`
-
 ## Comandos
 
-| Comando | Plan mode |
+| Comando | Fase / papel |
 | --- | --- |
-| `domain.init` | Scan + índices draft-first |
-| `domain.discover` | DDD draft-first |
-| `domain.flow` | Fluxo MD draft-first |
-| `domain.capability` | Tático draft-first |
-| `domain.model` | Integração / RF draft-first |
-| `domain.decision` | D-n draft-first |
+| `domain.init` | Evidências |
+| `domain.discover` | Estratégico + Descoberta |
+| `domain.flow` | Operacional (fluxo negócio) |
+| `domain.model` | Operacional (NFRs, finalize) |
+| `domain.decision` | Operacional (registry D-n) |
+| `domain.change` | Sessão evolutiva (P-n / E-n) |
+| `domain.status` | Leitura de progresso |
+| `domain.scan` | Re-sync evidências |
+| `domain.capability` | **DEPRECATED** → arch-kit |
 
-Helper: `.domain/scripts/promote_draft.py`, `adopt_product.py`
-
-Instalação: `/domain.install` ou `bash domain-kit/scripts/install-domain-kit.sh {hub}`
+Helper: `.domain/scripts/promote_draft.py`, `adopt_product.py`, `validate_gate.py`

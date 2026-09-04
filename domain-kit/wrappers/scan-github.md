@@ -2,7 +2,7 @@
 
 **Skill original:** N/A — usa MCP `user-github` (get_file_contents, search_code, list_issues)
 
-**Invocada por:** `/domain.init` (fase 0, G0), `/domain.scan` (re-sync)
+**Invocada por:** `/domain.init` (fase 0, Evidências), `/domain.scan` (re-sync)
 
 **Pré-condições:** `sources.yml` com entradas `github:`; MCP autenticado
 

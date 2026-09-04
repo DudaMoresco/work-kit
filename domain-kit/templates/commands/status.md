@@ -1,11 +1,11 @@
 ---
 name: domain-status
-description: Progresso domain-kit — gates, fluxos, gaps e próximo comando sugerido.
+description: Progresso domain-kit — fases, fluxos, gaps e próximo comando sugerido.
 ---
 
 ## Explain to user
 
-Vou resumir onde o produto está: gates G0–G2, fluxos prontos vs bloqueados, gaps e **próximo comando sugerido**.
+Vou resumir onde o produto está: fases **Evidências → Estratégico → Descoberta → Operacional**, fluxos prontos vs bloqueados, gaps e **próximo comando sugerido**.
 
 ## User Input
 
@@ -21,16 +21,28 @@ $ARGUMENTS
 4. Se produto tem artefatos mas índices incompletos, sugerir `/domain.init {p} --adopt`.
 5. Listar fluxos bloqueados por deps (`flow_deps.py` se disponível).
 6. Emitir markdown com:
-   - Tabela gates G0–G2 (PASS/FAIL + issues)
-   - Gaps por fase (scan, discover, model)
-   - **Próximo comando sugerido** (de `validate_gate.py --suggest`)
-   - Link para `dashboard.html`
+   - Tabela fases (PASS/FAIL + issues)
+   - **Sessão ativa** (`activeChange`) se preenchido — P-n/E-n em andamento
+   - Gaps por artefato (estratégico, descoberta, operacional)
+   - Artefatos arch-kit adotados (`arch.capabilitiesAdopted`, `integrationAdopted`)
+   - Link para [`product-README.md`](products/{p}/product-README.md) e `dashboard.html`
+   - **Próximo comando sugerido**
 
 ## Interpretação rápida
 
-| Gate | Significa | Se FAIL |
+| Fase | Significa | Se FAIL |
 | --- | --- | --- |
-| G0 | Primeiro scan ok | `/domain.init` ou `/domain.scan` |
-| G1 | Discover ok (BCs, ES/stories) | `/domain.discover` (+ modo adequado) |
-| G2 | Model ok (tático, fluxos, D-n) | `/domain.flow`, `/domain.capability`, `/domain.model --finalize` |
-| Todos PASS | Pronto para arch-kit | `/arch.route` |
+| Evidências | Scan e fontes indexadas | `/domain.init` ou `/domain.scan` |
+| Estratégico | Problema, visão, BCs, UL | `/domain.discover --stage strategic\|contexts` |
+| Descoberta | Stories e/ou event storming | `/domain.discover --stage stories\|event-storming` |
+| Operacional | Fluxos de negócio + NFRs + D-n | `/domain.flow`, `/domain.model --finalize` |
+| Mudança / problema / evolução | Sessão evolutiva | `/domain.change` |
+| Todas PASS | Handoff arch-kit | `/arch.route` |
+
+## Aliases legados (gates)
+
+| Gate | Equivale a |
+| --- | --- |
+| G0 | Evidências |
+| G1 | Estratégico + Descoberta |
+| G2 | Operacional |

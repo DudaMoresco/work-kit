@@ -1,6 +1,6 @@
 # Wrapper: domain-storytelling
 
-**Skill original:** `~/.cursor/skills/domain-storytelling/SKILL.md` — NÃO editar.
+**Skill:** [`skills/domain-storytelling/SKILL.md`](../skills/domain-storytelling/SKILL.md) (bundled).
 
 **Invocada por:** `/domain.discover`
 

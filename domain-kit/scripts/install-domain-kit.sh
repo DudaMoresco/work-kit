@@ -79,11 +79,15 @@ cp "${KIT_ROOT}/templates/config.yml" "${DOMAIN_DIR}/config.yml"
 cp "${KIT_ROOT}/templates/clarify/"*.md "${DOMAIN_DIR}/clarify/"
 # includes scan-discover.md (scan wizard Plan phase)
 
-# Symlink or note path to wrappers (stay in skills pack)
-WRAPPERS_LINK="${DOMAIN_DIR}/wrappers"
-if [[ ! -e "${WRAPPERS_LINK}" ]]; then
-  ln -sf "${KIT_ROOT}/wrappers" "${WRAPPERS_LINK}" 2>/dev/null || cp -R "${KIT_ROOT}/wrappers" "${WRAPPERS_LINK}"
+# Bundled know-how skills + wrappers (kit is self-contained; no ~/.cursor/skills dependency)
+if [[ ! -d "${KIT_ROOT}/skills" ]]; then
+  echo "domain-kit skills/ missing — clone completo do repo necessário" >&2
+  exit 1
 fi
+rm -rf "${DOMAIN_DIR}/skills" "${DOMAIN_DIR}/wrappers"
+cp -R "${KIT_ROOT}/skills" "${DOMAIN_DIR}/skills"
+cp -R "${KIT_ROOT}/wrappers" "${DOMAIN_DIR}/wrappers"
+echo "Installed .domain/skills/ and .domain/wrappers/"
 
 # MCP status snapshot (best-effort)
 MCP_STATUS="${DOMAIN_DIR}/mcp-status.json"
@@ -105,10 +109,12 @@ PY
 
 echo ""
 echo "Domain-kit installed in ${HUB_ROOT}"
+echo "  .domain/skills/     # know-how DDD bundled"
+echo "  .domain/wrappers/   # contratos de path/fase"
 echo "  .domain/scripts/regenerate_dashboard.sh products/{produto}"
 echo "  .domain/scripts/start_plantuml_server.sh  # PlantUML preview (porta 8765)"
-echo "  Commands: /domain.install (done), /domain.init, /domain.scan, ..."
+echo "  Commands: /domain.install (done), /domain.init, /domain.scan, /domain.change, ..."
 echo "  Deprecated alias: /workkit.init"
 echo "  Docs: ${KIT_ROOT}/GUIDE.md"
 echo ""
-echo "Skills DDD originais em ~/.cursor/skills/ NÃO foram alteradas."
+echo "Kit autossuficiente: skills DDD estão em .domain/skills/ (não usa ~/.cursor/skills)."

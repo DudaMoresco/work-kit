@@ -1,5 +1,9 @@
 # Wrapper: fluxos operacionais (domain-kit + arch-kit)
 
+**Skills:**
+- [`skills/fluxos-entregaveis/SKILL.md`](../skills/fluxos-entregaveis/SKILL.md) — know-how de fluxos to-be
+- [`skills/fluxogramas-decisao/SKILL.md`](../skills/fluxogramas-decisao/SKILL.md) — as-is / legado (`discover --mode as-is-first`)
+
 **Invocada por:** `/domain.flow {NN}`
 
 **Pré-condições:** deps de fluxo satisfeitas (`flow_deps.py`); fases Estratégico + Descoberta PASS
@@ -21,3 +25,5 @@
 - Status `ready` quando camada negócio promovida e validada
 
 **Pós-execução:** regenerate dashboard; sugerir próximo fluxo desbloqueado
+
+**Nota:** paths legados nas skills (`02-capabilities/.../fluxos`) são históricos — **sempre** usar os outputs deste wrapper.

@@ -6,7 +6,7 @@
 
 **Opções (ordem):**
 1. `glab api` / REST se token configurado
-2. [`dalvito-cli`](../../dalvito-cli/SKILL.md) em ambiente corporativo ECS
+2. CLI corporativa (ex.: dalvito) em ambiente ECS, se disponível
 3. **Fallback:** arquivos em `00-scan/imports/gitlab/`
 
 **Pré-condições:** entradas `gitlab:` em `sources.yml`

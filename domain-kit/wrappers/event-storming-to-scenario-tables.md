@@ -1,6 +1,6 @@
 # Wrapper: event-storming-to-scenario-tables
 
-**Skill original:** `~/.cursor/skills/event-storming-to-scenario-tables/SKILL.md` — NÃO editar.
+**Skill:** [`skills/event-storming-to-scenario-tables/SKILL.md`](../skills/event-storming-to-scenario-tables/SKILL.md) (bundled).
 
 **Invocada por:** `/domain.discover` (opcional)
 

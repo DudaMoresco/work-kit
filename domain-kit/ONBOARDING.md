@@ -8,11 +8,11 @@ Setup para **novo desenvolvedor** ou **novo produto** no architecture-hub.
 
 ## Pré-requisitos
 
-- Cursor com Agent Skills habilitado
+- Cursor com Agent Skills habilitados
 - Python 3.10+ (scripts de dashboard e gates — stdlib only)
 - **Docker** (opcional) — servidor PlantUML local para preview de diagramas no dashboard
 - Clone do `architecture-hub` (ou monorepo `work-hub`)
-- Skills DDD em `~/.cursor/skills/` (pacote pessoais) — **não são alteradas pelo framework**
+- Clone do **domain-kit / work-kit** — o kit traz as skills DDD em `domain-kit/skills/` (sem depender de `~/.cursor/skills/`)
 
 ---
 
@@ -35,8 +35,9 @@ No chat Cursor:
 
 O script:
 
-- Copia overlays para `architecture-hub/.domain/` e `.cursor/skills/domain-*`
-- **Não** sobrescreve skills DDD originais
+- Copia comandos para `.cursor/skills/domain-*`
+- Copia know-how para `.domain/skills/` e contratos para `.domain/wrappers/`
+- Copia scripts, clarify e config para `.domain/`
 - Gera `.domain/mcp-status.json` com checagem de MCPs
 
 **Alias deprecado:** `/workkit.init` — mesmo efeito, use `/domain.install`.

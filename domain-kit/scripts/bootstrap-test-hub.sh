@@ -148,16 +148,23 @@ MANIFEST="${TEST_HUB}/MANIFEST.md"
     echo "- \`${rel}\`"
   done
   echo ""
-  echo "## Wrappers (symlink → domain-kit/wrappers)"
+  echo "## Wrappers + skills bundled"
   echo ""
-  if [[ -L "${TEST_HUB}/.domain/wrappers" ]]; then
-    echo "Target: \`$(readlink "${TEST_HUB}/.domain/wrappers")\`"
-    echo ""
-    find "${TEST_HUB}/.domain/wrappers" -maxdepth 1 -name '*.md' | sort | while read -r f; do
-      echo "- \`$(basename "${f}")\`"
+  if [[ -d "${TEST_HUB}/.domain/skills" ]]; then
+    echo "Skills em \`.domain/skills/\`:"
+    find "${TEST_HUB}/.domain/skills" -mindepth 1 -maxdepth 1 -type d | sort | while read -r d; do
+      echo "- \`$(basename "${d}")\`"
     done
   else
-    echo "_(missing symlink)_"
+    echo "_(missing .domain/skills)_"
+  fi
+  echo ""
+  if [[ -d "${TEST_HUB}/.domain/wrappers" ]]; then
+    find "${TEST_HUB}/.domain/wrappers" -maxdepth 1 -name '*.md' | sort | while read -r f; do
+      echo "- \`.domain/wrappers/$(basename "${f}")\`"
+    done
+  else
+    echo "_(missing .domain/wrappers)_"
   fi
   echo ""
   echo "## Produto demo"

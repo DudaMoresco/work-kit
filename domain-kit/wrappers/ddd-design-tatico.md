@@ -1,6 +1,6 @@
 # Wrapper: ddd-design-tatico
 
-**Skill original:** design tático DDD — **movido para arch-kit**.
+**Skill:** [`skills/ddd-design-tatico/SKILL.md`](../skills/ddd-design-tatico/SKILL.md) (bundled para referência / handoff arch-kit).
 
 **Invocada por:** `/arch.capability {bc}` (quando arch-kit instalado). **`/domain.capability` está deprecated.**
 

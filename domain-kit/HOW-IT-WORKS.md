@@ -115,18 +115,18 @@ Todo conteúdo: **rascunho** (`.draft/` + chat) → **OK** → hub. Ver [referen
 
 ---
 
-## Wrappers vs skills originais
+## Wrappers vs skills bundled
 
-Skills DDD vivem em `~/.cursor/skills/ddd-*/SKILL.md` — **imutáveis** pelo framework.
+Know-how DDD vive **no próprio kit**: `domain-kit/skills/{nome}/SKILL.md`. Após install: `.domain/skills/`.
 
 `domain-kit/wrappers/{skill}.md` define:
 
 - Qual comando invoca
-- Pré-condições (gates, paths)
+- Pré-condições (fases, paths)
 - Outputs esperados no hub
-- Link read-only para skill original
+- Link para a skill bundled
 
-Comandos em `.cursor/skills/domain-*/SKILL.md` dizem: *siga o wrapper; leia skill original se precisar do know-how completo*.
+Comandos em `.cursor/skills/domain-*/SKILL.md` dizem: *siga o wrapper; leia `.domain/skills/{nome}/SKILL.md` para know-how completo*.
 
 ---
 
@@ -163,7 +163,8 @@ Espelha filosofia do [spec-kit-dashboard](../../spec-kit-dashboard/).
 domain-kit/
 ├── GUIDE.md ONBOARDING.md HOW-IT-WORKS.md INVENTORY.md
 ├── SKILL.md
-├── wrappers/           ← contratos (não editam skills originais)
+├── skills/             ← know-how DDD bundled (repo autossuficiente)
+├── wrappers/           ← contratos de path/fase → skills/
 ├── templates/          ← sources, registry, commands overlays
 ├── scripts/            ← install, dashboard, validate_gate
 └── references/         ← pipeline, commands, gates, examples
@@ -173,7 +174,7 @@ Instalação copia para hub:
 
 ```text
 architecture-hub/
-├── .domain/            ← config, scripts, clarify/
+├── .domain/            ← config, scripts, clarify/, skills/, wrappers/
 └── .cursor/skills/domain-*/
 ```
 
@@ -183,9 +184,10 @@ architecture-hub/
 
 Para nova skill DDD:
 
-1. Criar `wrappers/nova-skill.md` (não editar SKILL.md original)
-2. Referenciar no comando macro/micro adequado
-3. Atualizar `references/commands.md`
+1. Adicionar pasta em `skills/{nova-skill}/` (SKILL.md + refs)
+2. Criar `wrappers/nova-skill.md` apontando para ela
+3. Referenciar no comando macro/micro adequado
+4. Atualizar `references/commands.md` e `skills/README.md`
 
 Para novo provedor de scan:
 

@@ -67,3 +67,5 @@ Propor → .draft/ + chat → OK do usuário → path canônico
 | `domain.capability` | **DEPRECATED** → arch-kit |
 
 Helper: `.domain/scripts/promote_draft.py`, `adopt_product.py`, `validate_gate.py`
+
+Know-how: `.domain/skills/` (bundled) · contratos: `.domain/wrappers/`

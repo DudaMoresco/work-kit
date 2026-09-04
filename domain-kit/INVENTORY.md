@@ -83,9 +83,11 @@ Pastas ausentes após init são **esperadas**, não erro de setup.
 
 ---
 
-## 2. Skills DDD externas (read-only)
+## 2. Skills DDD bundled
 
-Skills de know-how DDD vivem em `~/.cursor/skills/{nome}/SKILL.md`. O domain-kit **nunca as edita**; usa **wrappers** para contrato de paths, gates e handoffs.
+Know-how DDD vive em [`skills/`](skills/) (copiado para `.domain/skills/` no install). O kit **não depende** de `~/.cursor/skills/`.
+
+Contratos de path/fase: **wrappers** em [`wrappers/`](wrappers/). Índice: [skills/README.md](skills/README.md).
 
 | Skill | Papel no pipeline | Artefatos típicos |
 | --- | --- | --- |
@@ -94,25 +96,30 @@ Skills de know-how DDD vivem em `~/.cursor/skills/{nome}/SKILL.md`. O domain-kit
 | `event-storming` | Eventos, comandos, políticas, read models | `01-product/03-discovery/01-event-storming/` |
 | `event-storming-to-scenario-tables` | Converter ES visual em tabelas de cenário (opcional) | `01-product/02-domain/cenarios/` |
 | `ddd-linguagem-e-contextos` | Glossário + fronteiras de BC | `desafio-negocio.md`, `linguagem-ubiqua.md`, `bounded-contexts.md` |
-| `ddd-integracao-contextos` | Relações upstream/downstream, ACL, orquestração | `01-product/04-integration/01-contextos.md` |
-| `ddd-design-tatico` | Agregados, entidades, value objects por BC | `02-capabilities/{bc}/design-tatico.md` |
 | `levantamento-requisitos` | RF/RNF, personas, riscos (Cagan) | `04-platform/01-non-functional/01-requisitos.md` |
-| `fluxos-entregaveis` | Fluxos to-be entregáveis numerados | `02-capabilities/{bc}/fluxos/{NN}-{slug}.md` |
-| `fluxogramas-decisao` | Regras **as-is** (legado) por capability | `02-capabilities/{bc}/fluxogramas-decisao/` |
+| `fluxos-entregaveis` | Fluxos to-be (know-how; paths via wrapper operacional) | `01-product/03-operacional/fluxos/` |
+| `fluxogramas-decisao` | Regras **as-is** (legado) | via discover `as-is-first` |
 
-### Fora do domain-kit (arch-kit)
+### Bundled para arch-kit / handoff
+
+| Skill | Nota |
+| --- | --- |
+| `ddd-design-tatico` | Preferir arch-kit; `/domain.capability` deprecated |
+| `ddd-integracao-contextos` | Detalhe em `arch/01-integration/` |
+
+### Fora do domain-kit
 
 | Skill | Dono | Motivo |
 | --- | --- | --- |
-| `database-model` | **arch-kit** | Documenta **persistência física** (stores Mongo/Postgres, colunas, índices) a partir do código ou desenho técnico. Pertence a `04-platform/02-data/` e exige visão de infra — não é descoberta de negócio. Contrato H2: [handoffs.md § H2](../references/handoffs.md). |
+| `database-model` | **arch-kit** | Persistência física — não é descoberta de negócio. |
 
 ---
 
 ## 3. Wrappers
 
-Contratos em `wrappers/*.md` — instalados no hub via symlink `.domain/wrappers → domain-kit/wrappers`.
+Contratos em `wrappers/*.md` — instalados no hub como cópia `.domain/wrappers/` (+ `.domain/skills/`).
 
-Cada wrapper define: skill original (link read-only), comando invocador, pré-condições, inputs, outputs no hub, pós-execução (status + dashboard).
+Cada wrapper define: skill bundled, comando invocador, pré-condições, inputs, outputs no hub, pós-execução (status + dashboard).
 
 | Wrapper | Invocado por | Resumo |
 | --- | --- | --- |
@@ -152,7 +159,7 @@ Estado registrado em `.domain/mcp-status.json` após install. Detalhes de setup:
 
 | Script | Descrição |
 | --- | --- |
-| `install-domain-kit.sh` | Copia command skills, pack skill, scripts, config, clarify e symlink wrappers para o hub. Entrada de `/domain.install`. |
+| `install-domain-kit.sh` | Copia command skills, pack skill, scripts, config, clarify, **skills/** e **wrappers/** para o hub. Entrada de `/domain.install`. |
 | `adopt_product.py` | Inventaria produto existente; gera índices faltantes; gap report. Usado por `/domain.init --adopt`. |
 | `bootstrap-test-hub.sh` | Sandbox local `test-hub/`: install + produto demo + dashboard + `MANIFEST.md`. |
 | `regenerate_dashboard.sh` | Wrapper shell; chama `generate_domain_dashboard.py`. |
@@ -250,7 +257,7 @@ _(Hooks `before_discover` / `before_flow` removidos — plan mode inline.)_
 ## 9. Regras globais
 
 1. **Plan mode** — `.draft/` + preview; promote só após OK ([plan-mode.md](references/plan-mode.md)).
-2. **Wrapper primeiro** — skill DDD read-only.
+2. **Wrapper primeiro** — depois skill em `.domain/skills/` (bundled no kit).
 3. **Sem clarify separado** — perguntas inline no comando ativo.
 4. **init = índices + 1o scan (G0)**; discover = DDD; scan = re-sync.
 5. **Lazy init** — pastas de domínio sob demanda após init.

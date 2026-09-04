@@ -7,7 +7,7 @@ Spec completa. Overlays: [`../templates/commands/`](../templates/commands/).
 **Regras globais:**
 
 1. **[Plan mode](../references/plan-mode.md)** — conteúdo em `.draft/` + preview; promote só após OK.
-2. Ler **wrapper**; skill DDD read-only; **sem `/domain.clarify`** separado.
+2. Ler **wrapper** em `.domain/wrappers/`; skill DDD em `.domain/skills/{nome}/` (bundled); **sem `/domain.clarify`** separado.
 
 ---
 

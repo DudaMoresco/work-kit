@@ -1,6 +1,6 @@
 # Wrapper: ddd-linguagem-e-contextos
 
-**Skill original:** `~/.cursor/skills/ddd-linguagem-e-contextos/SKILL.md` — NÃO editar.
+**Skill:** [`skills/ddd-linguagem-e-contextos/SKILL.md`](../skills/ddd-linguagem-e-contextos/SKILL.md) (bundled).
 
 **Invocada por:** `/domain.discover` (fechamento discover)
 

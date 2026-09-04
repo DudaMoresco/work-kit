@@ -1,6 +1,6 @@
 # Wrapper: ddd-integracao-contextos
 
-**Skill original:** integração entre contextos — detalhe técnico.
+**Skill:** [`skills/ddd-integracao-contextos/SKILL.md`](../skills/ddd-integracao-contextos/SKILL.md) (bundled para detalhe técnico / arch-kit).
 
 **Invocada por:** **arch-kit** (`/arch.integrate` ou equivalente). **Não** pelo domain-kit na fase Operacional.
 

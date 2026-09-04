@@ -4,9 +4,9 @@ Este documento explica **cada estágio da descoberta de domínio (DDD)**, para q
 
 Referências canônicas:
 
-- Mapa global de estágios 1–13: [`estagios-desenvolvimento.md`](../../../skills/estagios-desenvolvimento.md)
-- Pipeline e gates do domain-kit: [`pipeline.md`](pipeline.md)
+- Pipeline e fases do domain-kit: [`pipeline.md`](pipeline.md)
 - Comandos e cenários de uso: [`COMMAND-GUIDE.md`](../COMMAND-GUIDE.md)
+- Skills bundled: [`../skills/README.md`](../skills/README.md)
 
 O domain-kit cobre os **estágios 1–7** (descoberta + modelagem de domínio). Estágios 8+ (arquitetura, entrega, qualidade) pertencem ao **arch-kit** e **delivery-kit**, após o Gate G2.
 

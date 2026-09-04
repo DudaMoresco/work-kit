@@ -1,6 +1,6 @@
 # Wrapper: event-storming
 
-**Skill original:** `~/.cursor/skills/event-storming/SKILL.md` — NÃO editar.
+**Skill:** [`skills/event-storming/SKILL.md`](../skills/event-storming/SKILL.md) (bundled).
 
 **Invocada por:** `/domain.discover`, `/domain.flow {NN}` (recorte do fluxo)
 

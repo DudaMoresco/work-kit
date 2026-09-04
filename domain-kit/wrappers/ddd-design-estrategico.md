@@ -1,6 +1,6 @@
 # Wrapper: ddd-design-estrategico
 
-**Skill original:** `~/.cursor/skills/ddd-design-estrategico/SKILL.md` — NÃO editar.
+**Skill:** [`skills/ddd-design-estrategico/SKILL.md`](../skills/ddd-design-estrategico/SKILL.md) (bundled).
 
 **Invocada por:** `/domain.discover` (etapa estratégico)
 

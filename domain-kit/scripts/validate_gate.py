@@ -148,9 +148,14 @@ def validate_phase(
 
     if phase == "descoberta":
         if mode == "minimal":
+            # Discovery optional in minimal — PASS without issues; warn on stderr only
             if not check_one_of_dirs(product_dir, spec.get("one_of_dirs", [])):
-                issues.append("minimal mode: descoberta opcional mas recomendada")
-        elif not check_one_of_dirs(product_dir, spec.get("one_of_dirs", [])):
+                print(
+                    "WARN: minimal mode — descoberta vazia (event-storming/stories opcional)",
+                    file=sys.stderr,
+                )
+            return True, []
+        if not check_one_of_dirs(product_dir, spec.get("one_of_dirs", [])):
             issues.append("need event-storming OR domain-storytelling discovery")
         return len(issues) == 0, issues
 
@@ -354,6 +359,12 @@ def main() -> int:
         if args.suggest or (args.phase is None and args.gate is None):
             print(f"Suggested next: {next_cmd}")
 
+    # Exit code: scoped to requested phase/gate; full suite only for all/default
+    if args.phase and args.phase != "all":
+        return 0 if results[args.phase]["pass"] else 1
+    if args.gate and args.gate != "all":
+        gate_ok, _ = validate_gate_alias(product_dir, args.gate, status, mode=args.mode)
+        return 0 if gate_ok else 1
     all_ok = all(results[p]["pass"] for p in PHASE_ORDER)
     return 0 if all_ok else 1
 

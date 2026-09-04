@@ -81,11 +81,12 @@ def ensure_indices(product_dir: Path, kit_root: Path, product: str, initiative: 
 
 
 def infer_initiative(hub: Path, product_dir: Path) -> str:
-    readme = product_dir / "README.md"
-    if readme.exists():
-        m = re.search(r"iniciativa:\s*(\S+)", readme.read_text(encoding="utf-8"))
-        if m:
-            return m.group(1)
+    for name in ("product-README.md", "README.md"):
+        readme = product_dir / name
+        if readme.exists():
+            m = re.search(r"iniciativa:\s*(\S+)", readme.read_text(encoding="utf-8"))
+            if m:
+                return m.group(1)
     initiatives = hub / "initiatives"
     if initiatives.is_dir():
         for d in sorted(initiatives.iterdir()):

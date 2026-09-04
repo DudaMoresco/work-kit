@@ -118,7 +118,7 @@ path.write_text(text.replace(needle, replacement), encoding="utf-8")
 print(f"Wired manual source in {path}")
 PY
 substitute_template "${KIT_ROOT}/templates/domain-status.json" "${PRODUCT_DIR}/domain-status.json"
-substitute_template "${KIT_ROOT}/templates/product-README.md" "${PRODUCT_DIR}/README.md"
+substitute_template "${KIT_ROOT}/templates/product-README.md" "${PRODUCT_DIR}/product-README.md"
 
 # Registry stub
 cat > "${PRODUCT_DIR}/03-registry/produto.md" <<MD

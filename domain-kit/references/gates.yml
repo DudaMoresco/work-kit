@@ -81,6 +81,7 @@ modes:
       - domain_storytelling
       - event_storming
     descoberta_relaxed: true
+    note: validate_gate --mode minimal → Descoberta PASS mesmo sem ES/stories (WARN stderr only)
   incremental:
     scope: delta
     note: Tático não é critério de saída do domain-kit

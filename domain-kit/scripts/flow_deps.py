@@ -51,14 +51,22 @@ def main() -> int:
         return 0
 
     deps = flows[fid]["deps"]
-    blocked = []
+    missing: list[str] = []
+    not_ready: list[str] = []
     for dep in deps:
-        dep_flow = flows.get(dep, {"status": "ready"})
-        if dep_flow.get("status") != "ready":
-            blocked.append(dep)
+        if dep not in flows:
+            missing.append(dep)
+            continue
+        if flows[dep].get("status") != "ready":
+            not_ready.append(dep)
 
-    if blocked:
-        print(f"FAIL: {fid} blocked by deps not ready: {', '.join(blocked)}")
+    if missing or not_ready:
+        parts: list[str] = []
+        if missing:
+            parts.append(f"deps missing from registry: {', '.join(missing)}")
+        if not_ready:
+            parts.append(f"deps not ready: {', '.join(not_ready)}")
+        print(f"FAIL: {fid} blocked — {'; '.join(parts)}")
         return 1
 
     print(f"PASS: {fid} deps satisfied")

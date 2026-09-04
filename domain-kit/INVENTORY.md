@@ -71,7 +71,7 @@ Comandos são skills instaladas em `.cursor/skills/` a partir de `templates/comm
 
 | Pasta / artefato | Criado por |
 | --- | --- |
-| `README.md`, `sources.yml`, `flows-registry.yml`, `domain-status.json`, `03-registry/produto.md` | `/domain.init` |
+| `product-README.md`, `sources.yml`, `flows-registry.yml`, `domain-status.json`, `03-registry/produto.md` | `/domain.init` |
 | `01-product/00-scan/` | `/domain.init` (primeiro scan, G0) ou `/domain.scan` (re-sync) |
 | `01-product/01-vision/`, `02-domain/`, `03-discovery/` | `/domain.discover` |
 | `02-capabilities/` (raiz) | `/domain.discover` |
@@ -178,7 +178,7 @@ Estado registrado em `.domain/mcp-status.json` após install. Detalhes de setup:
 | --- | --- | --- |
 | `templates/commands/*.md` | `.cursor/skills/{nome}/SKILL.md` | Overlays de comandos Cursor |
 | `templates/clarify/*.md` | `.domain/clarify/` | **`findings-brief`**, **`visibility-checkpoint`**, **`changelog`**, `discover` (0b), `flow`, `scan`, `scan-discover` |
-| `templates/product-README.md` | `products/{p}/README.md` | Mapa do pipeline lazy init + próximo passo |
+| `templates/product-README.md` | `products/{p}/product-README.md` | Cartão PM — visão, benefícios, status por fase, índice |
 | `templates/CHANGELOG.md` | `products/{p}/CHANGELOG.md` | Histórico reverse-chronological de scans e mudanças significativas |
 | `templates/config.yml` | `.domain/config.yml` | `skills_pack`, extensions (hooks), guide_paths |
 | `templates/sources.yml` | `products/{p}/sources.yml` | Catálogo de fontes: github, gitlab, confluence, manual |
@@ -194,7 +194,8 @@ Estado registrado em `.domain/mcp-status.json` após install. Detalhes de setup:
 
 | Arquivo | Conteúdo |
 | --- | --- |
-| `README.md` | Mapa lazy init + próximo comando |
+| `product-README.md` | Cartão PM — visão, status por fase, próximo comando |
+| `README.md` | Legado opcional; preferir `product-README.md` |
 | `CHANGELOG.md` | Histórico de scans e mudanças significativas |
 | `domain-status.json` | Fase, gates, `scan: pending\|complete\|partial\|skipped` |
 | `flows-registry.yml` | Catálogo `fluxo-NN`, deps, status |

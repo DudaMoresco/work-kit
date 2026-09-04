@@ -1,53 +1,77 @@
-# Gates do domain-kit
-# Complementa work-kit/references/gates.yml (G1, G2)
+# Fases do domain-kit (alinhado a scripts/validate_gate.py)
+# Preferir --phase; G0–G2 são aliases.
+# Evidências (G0) → Estratégico + Descoberta (G1) → Operacional (G2) → arch-kit
 
-version: 1
+version: 2
 kit: domain-kit
 
-gates:
-  G0:
-    name: Scan complete
+phases:
+  evidencias:
+    name: Evidências
+    question: O que sabemos, com fonte?
     command: domain.init
-    optional: true
-    note: Primeiro scan roda em domain.init; domain.scan é re-sync
+    alias: G0
+    note: Primeiro scan em domain.init; domain.scan é re-sync
     requires:
+      - path: products/{produto}/sources.yml
       - field: domain-status.json scan in [complete, partial, skipped]
       - or_path: products/{produto}/01-product/00-scan/scan-manifest.json
+    recommended:
+      - path: products/{produto}/01-product/00-scan/sintese-evidencias.md
 
-  G1:
-    name: Fim do discover — pronto para model
+  estrategico:
+    name: Estratégico
+    question: Por quê? Onde? Como falamos?
     command: domain.discover
-    handoff: H1
+    stages: [strategic, contexts]
     requires:
       - path: products/{produto}/01-product/01-vision/01-design-estrategico.md
-      - path: products/{produto}/01-product/02-domain/bounded-contexts.md
       - path: products/{produto}/01-product/02-domain/desafio-negocio.md
+      - path: products/{produto}/01-product/02-domain/bounded-contexts.md
       - path: products/{produto}/01-product/02-domain/linguagem-ubiqua.md
+
+  descoberta:
+    name: Descoberta
+    question: Como o domínio se comporta no tempo?
+    command: domain.discover
+    stages: [stories, event-storming]
     requires_one_of:
       - path: products/{produto}/01-product/03-discovery/01-event-storming/
         type: directory_nonempty
       - path: products/{produto}/01-product/03-discovery/02-domain-storytelling/
-        type: directory_min_files
-        count: 2
+        type: directory_nonempty
+    modes:
+      minimal:
+        note: discovery opcional (warning) quando mode=minimal no validate
 
-  G2:
-    name: Fim do model — pronto para arch-kit
-    command: domain.model
-    handoff: H2
+  operacional:
+    name: Operacional
+    question: Quais cenários ponta a ponta garantir?
+    command: domain.model --finalize
+    handoff: arch.route
+    alias: G2
     requires:
-      - path: products/{produto}/01-product/04-integration/01-contextos.md
       - path: products/{produto}/04-platform/01-non-functional/01-requisitos.md
       - path: products/{produto}/03-registry/produto.md
-      - path: products/{produto}/02-capabilities/
-        type: capabilities_complete
-    capabilities_complete:
-      per_bc:
-        - README.md
-        - design-tatico.md
-      fluxos_min: 1
-    optional:
-      - path: products/{produto}/02-capabilities/ordem-de-servico/fluxos-aplicacao.md
-        note: obrigatório se orquestração cross-BC
+      - fluxos_min: 1
+        paths:
+          - products/{produto}/01-product/03-operacional/fluxos/
+          - products/{produto}/flows-registry.yml
+    does_not_require:
+      - products/{produto}/01-product/04-integration/01-contextos.md
+      - products/{produto}/02-capabilities/{bc}/design-tatico.md
+      - products/{produto}/arch/01-integration/01-contextos.md
+
+# Aliases legados (validate_gate.py --gate)
+gates:
+  G0:
+    phases: [evidencias]
+  G1:
+    phases: [estrategico, descoberta]
+    handoff: H1
+  G2:
+    phases: [operacional]
+    handoff: H2
 
 modes:
   full:
@@ -55,25 +79,20 @@ modes:
   minimal:
     skip:
       - domain_storytelling
-      - scenario_tables
-    g1_relaxed:
-      event_storming_or_stories: false
+      - event_storming
+    descoberta_relaxed: true
   incremental:
-    scope: single_bc
-    g2_checks:
-      - design_tatico_for_bc
-      - fluxos_for_bc
-      - registry_delta_d_n
+    scope: delta
+    note: Tático não é critério de saída do domain-kit
 
-oficina_fixture:
-  product: oficina-mecanica
-  g1: pass
-  g2: pass
-  bcs:
-    - ordem-de-servico
-    - orcamento
-    - estoque
-    - cadastros
-    - acesso
-  fluxos: 7
-  registry_range: D-01..D-33
+boundary:
+  domain_kit:
+    - evidencias
+    - estrategico
+    - descoberta
+    - operacional_negocio
+  arch_kit:
+    - design_tatico
+    - integracao_tecnica
+    - fluxos_tecnicos
+    - c4_adr_database_model

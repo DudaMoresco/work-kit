@@ -1,17 +1,23 @@
-# Templates — fluxos entregáveis
+# Templates — fluxos (know-how)
+
+No domain-kit, preferir [`../../../templates/fluxo-operacional.md`](../../../templates/fluxo-operacional.md)
+em `01-product/03-operacional/fluxos/`. Os templates abaixo servem quando o time
+pede sequência PlantUML rica (negócio ou arch).
+
+**Paths:** ver [`../../../wrappers/fluxos-entregaveis.md`](../../../wrappers/fluxos-entregaveis.md).
 
 ---
 
-## README.md
+## README.md (mapa opcional)
 
 ```markdown
-# Fluxos entregáveis — <Feature> (to-be MVP)
+# Fluxos operacionais — <Feature>
 
-Diagramas de **sequência PlantUML** dos fluxos que entram no código.
+Cenários ponta a ponta (camada negócio). Detalhe técnico → `arch/fluxos/`.
 Cada MD: cenário de **sucesso** + **alternativos**.
-Sequências explicitam **troca de status** e **produção/consumo de eventos**.
+Explicitar **status** e **eventos de domínio**.
 
-Fontes: [`../design-tatico/`](../design-tatico/), [`../event-storming/`](../event-storming/), …
+Fontes: event-storming, domain stories, bounded-contexts, …
 
 | Campo | Valor |
 | --- | --- |

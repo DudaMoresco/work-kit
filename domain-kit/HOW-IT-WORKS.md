@@ -11,7 +11,7 @@ domain-kit  →  arch-kit  →  delivery-kit  →  spec-kit  →  código
    ↑ você está aqui
 ```
 
-Handoff domain → arch: **H2** quando Gate **G2** passa ([../references/handoffs.md](../references/handoffs.md)).
+Handoff domain → arch quando fase **Operacional** PASS (alias G2). Ver [references/handoffs.md](references/handoffs.md) e [references/gates.yml](references/gates.yml).
 
 ---
 
@@ -19,12 +19,12 @@ Handoff domain → arch: **H2** quando Gate **G2** passa ([../references/handoff
 
 | Camada | Comandos | Papel |
 | --- | --- | --- |
-| **Hub** | install | Framework no hub (1x) |
-| **Meta** | init, scan, status | Bootstrap produto, re-sync fontes, visibilidade |
-| **Macro** | discover, model | Orquestram várias skills em batch |
-| **Micro** | flow, capability, decision | Uma unidade de trabalho por sessão |
+| **Hub** | install | Framework no hub (1×) |
+| **Meta** | init, scan, status, change | Bootstrap, re-sync, visibilidade, sessões evolutivas |
+| **Macro** | discover, model | Estratégico/Descoberta; fechar Operacional |
+| **Micro** | flow, decision | Uma unidade por sessão |
 
-Macro = conveniente para replay; **micro = recomendado** em produtos com N fluxos.
+~~capability~~ → arch-kit. Macro = conveniente; **micro** recomendado com N fluxos.
 
 ---
 
@@ -32,35 +32,36 @@ Macro = conveniente para replay; **micro = recomendado** em produtos com N fluxo
 
 | Arquivo | Conteúdo |
 | --- | --- |
-| `domain-status.json` | Fase atual, gates, scan status |
+| `product-README.md` | Cartão PM — visão, benefícios, status por fase |
+| `domain-status.json` | Fases, `activeChange`, próximo comando |
 | `flows-registry.yml` | Catálogo fluxo-NN, deps, status |
-| `scan-manifest.json` | Findings de fontes externas (citados) |
-| `CHANGELOG.md` | Histórico de scans e mudanças significativas |
+| `scan-manifest.json` | Findings de fontes externas |
+| `CHANGELOG.md` | Histórico de scans e mudanças |
 | `03-registry/produto.md` | Decisões D-n |
 | Artefatos MD | Conteúdo; dashboard só lê |
 
-O dashboard HTML é **read-only** — nunca inventa progresso.
-
-Diagramas PlantUML nos MD são renderizados na aba Preview via servidor local (**porta 8765**).
-Ver [references/plantuml-dashboard.md](references/plantuml-dashboard.md).
+Dashboard é **read-only**. PlantUML: porta **8765** — [references/plantuml-dashboard.md](references/plantuml-dashboard.md).
 
 ---
 
-## Gates
+## Fases (aliases G0–G2)
 
-| Gate | Após | Critério resumido |
+| Fase | Após | Critério resumido |
 | --- | --- | --- |
-| **G0** | init (scan + síntese) | Manifest ou skip documentado + `sintese-evidencias.md` recomendado |
-| **G1** | discover | Estratégico + BCs + discovery |
-| **G2** | model | Integração + tático + fluxos + D-n + RF |
+| **Evidências** (G0) | init | sources + scan (manifest ou skip) |
+| **Estratégico** | discover contexts | design + desafio + BCs + UL |
+| **Descoberta** | stories / ES | event-storming **ou** storytelling |
+| **Operacional** (G2) | flow + model --finalize | ≥1 fluxo ready + NFR + registry |
 
-Definição: [references/gates.yml](references/gates.yml) · validação: `validate_gate.py`
+**Não** exige integração técnica nem design tático para fechar Operacional.
+
+Definição: [references/gates.yml](references/gates.yml) · `validate_gate.py --phase …`
 
 ---
 
 ## Ingestão de fontes externas
 
-Lógica **Plan + Execute + curadoria**. Roda na **fase 0 de `/domain.init`** (Gate G0). **`/domain.scan`** para re-sync.
+Plan + Execute + curadoria na **fase Evidências** (`/domain.init`). Re-sync: `/domain.scan`.
 
 ```mermaid
 sequenceDiagram
@@ -72,7 +73,7 @@ sequenceDiagram
   participant Discover as domain_discover
 
   User->>Init: domain.init
-  Init->>Plan: fase 0 — fontes
+  Init->>Plan: Evidências — fontes
   alt sources vazio
     Plan->>User: AskQuestion fontes
     User->>Plan: confirma draft
@@ -81,79 +82,60 @@ sequenceDiagram
   Init->>MCP: get_file_contents
   MCP-->>Init: README docs
   Init->>Hub: scan-manifest.json
-  Init->>User: curadoria findings
-  Init->>User: sintese evidencias
-  User->>Init: confirma sintese + G0
+  Init->>User: curadoria + sintese
+  User->>Init: confirma Evidências
   User->>Discover: domain.discover
-  Discover->>User: lacunas 0b
-  User->>Discover: domain.discover auto
-  Discover->>User: 1 estagio DDD + rascunho
 ```
 
-Roteiro Plan: [templates/clarify/scan-discover.md](templates/clarify/scan-discover.md) · Curadoria: [templates/clarify/scan.md](templates/clarify/scan.md)
-
-GitLab/Confluence: mesmo contrato de manifest; implementação via wrapper + fallback manual ([wrappers/scan-gitlab.md](wrappers/scan-gitlab.md)).
+Roteiros: [templates/clarify/scan-discover.md](templates/clarify/scan-discover.md) · [wrappers/scan-gitlab.md](wrappers/scan-gitlab.md).
 
 ---
 
 ## Plan mode
 
-Todo conteúdo: **rascunho** (`.draft/` + chat) → **OK** → hub. Ver [references/plan-mode.md](references/plan-mode.md).
+Todo conteúdo: **rascunho** (`.draft/` + chat) → **OK** → hub. [references/plan-mode.md](references/plan-mode.md).
 
-`/domain.clarify` **deprecado** — não documentar como passo do pipeline.
+`/domain.clarify` **deprecado**.
 
 ## Lazy init (pastas sob demanda)
 
 | Pasta | Criado por |
 | --- | --- |
-| `01-product/00-scan/` | `/domain.init` (G0) ou `/domain.scan` (re-sync) |
+| `01-product/00-scan/` | `/domain.init` ou `/domain.scan` |
 | `01-product/01-vision/`, `02-domain/`, `03-discovery/` | `/domain.discover` |
-| `02-capabilities/{bc}/` | `/domain.capability`, `/domain.flow` |
+| `01-product/03-operacional/fluxos/` | `/domain.flow` |
 | `04-platform/01-non-functional/` | `/domain.model` |
+| `arch/{bc}/`, `arch/01-integration/` | arch-kit (não domain) |
 
-`/domain.init` cria índices + conduz primeiro scan. **`--adopt`** para produtos já no hub.
+`/domain.init` cria índices + primeiro scan. **`--adopt`** para produtos já no hub.
 
 ---
 
 ## Wrappers vs skills bundled
 
-Know-how DDD vive **no próprio kit**: `domain-kit/skills/{nome}/SKILL.md`. Após install: `.domain/skills/`.
+Know-how: `domain-kit/skills/{nome}/SKILL.md` → após install `.domain/skills/`.
 
-`domain-kit/wrappers/{skill}.md` define:
-
-- Qual comando invoca
-- Pré-condições (fases, paths)
-- Outputs esperados no hub
-- Link para a skill bundled
-
-Comandos em `.cursor/skills/domain-*/SKILL.md` dizem: *siga o wrapper; leia `.domain/skills/{nome}/SKILL.md` para know-how completo*.
+Wrappers: paths/fases — **autoridade de path**. Skill = know-how (pode citar paths legados; ignore e use o wrapper).
 
 ---
 
 ## Multi-fluxo
 
-`flows-registry.yml` é o índice central:
+`flows-registry.yml`:
 
-- `fluxo-NN` com deps (`fluxo-02` depende de `fluxo-01`)
+- `fluxo-NN` com deps
 - Status: `draft` → `clarifying` → `ready`
-- Link para MD em `02-capabilities/{bc}/fluxos/`
+- Path canônico: `01-product/03-operacional/fluxos/{NN}-{slug}.md`
 
-`/domain.flow NN` valida deps antes de começar.
+Legado: `02-capabilities/{bc}/fluxos/` ainda conta no adopt/validate, mas **novos** fluxos usam operacional.
 
-Oficina: 7 fluxos → depois viram Tech Stories #11–#17 (delivery-kit).
+`/domain.flow NN` valida deps via `flow_deps.py`.
 
 ---
 
 ## Dashboard
 
-`generate_domain_dashboard.py`:
-
-1. Lê `domain-status.json`, `flows-registry.yml`
-2. Checa existência de paths canônicos
-3. Opcionalmente roda `validate_gate.py`
-4. Gera HTML com pipeline, grade de fluxos, tabs MD
-
-Espelha filosofia do [spec-kit-dashboard](../../spec-kit-dashboard/).
+`generate_domain_dashboard.py` lê status/registry, valida fases, gera HTML.
 
 ---
 
@@ -163,14 +145,12 @@ Espelha filosofia do [spec-kit-dashboard](../../spec-kit-dashboard/).
 domain-kit/
 ├── GUIDE.md ONBOARDING.md HOW-IT-WORKS.md INVENTORY.md
 ├── SKILL.md
-├── skills/             ← know-how DDD bundled (repo autossuficiente)
-├── wrappers/           ← contratos de path/fase → skills/
-├── templates/          ← sources, registry, commands overlays
-├── scripts/            ← install, dashboard, validate_gate
-└── references/         ← pipeline, commands, gates, examples
+├── skills/             ← know-how DDD bundled
+├── wrappers/           ← contratos de path/fase
+├── templates/
+├── scripts/
+└── references/
 ```
-
-Instalação copia para hub:
 
 ```text
 architecture-hub/
@@ -182,15 +162,7 @@ architecture-hub/
 
 ## Extensão
 
-Para nova skill DDD:
-
-1. Adicionar pasta em `skills/{nova-skill}/` (SKILL.md + refs)
-2. Criar `wrappers/nova-skill.md` apontando para ela
-3. Referenciar no comando macro/micro adequado
-4. Atualizar `references/commands.md` e `skills/README.md`
-
-Para novo provedor de scan:
-
-1. `wrappers/scan-{provedor}.md`
-2. Estender schema `sources.yml`
-3. Overlay `domain.scan`
+1. Pasta em `skills/{nova-skill}/`
+2. `wrappers/nova-skill.md`
+3. Comando em `templates/commands/`
+4. Atualizar `skills/README.md` e docs de fase

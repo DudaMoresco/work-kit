@@ -2,32 +2,30 @@
 
 Setup para **novo desenvolvedor** ou **novo produto** no architecture-hub.
 
-**Mapa de comandos:** [COMMAND-GUIDE.md](COMMAND-GUIDE.md)
+**Mapa de comandos:** [COMMAND-GUIDE.md](COMMAND-GUIDE.md) · [SKILL.md](SKILL.md)
 
 ---
 
 ## Pré-requisitos
 
 - Cursor com Agent Skills habilitados
-- Python 3.10+ (scripts de dashboard e gates — stdlib only)
-- **Docker** (opcional) — servidor PlantUML local para preview de diagramas no dashboard
+- Python 3.10+ (scripts de dashboard e fases — stdlib only)
+- **Docker** (opcional) — servidor PlantUML para preview no dashboard
 - Clone do `architecture-hub` (ou monorepo `work-hub`)
-- Clone do **domain-kit / work-kit** — o kit traz as skills DDD em `domain-kit/skills/` (sem depender de `~/.cursor/skills/`)
+- Clone do **domain-kit / work-kit** — skills DDD em `domain-kit/skills/` (sem `~/.cursor/skills/`)
 
 ---
 
 ## Passo 1 — Workspace (`/domain.install`)
 
 ```bash
-# Monorepo work-hub (architecture-hub + work-kit lado a lado):
+# Monorepo work-hub:
 bash ../work-kit/domain-kit/scripts/install-domain-kit.sh /path/to/architecture-hub
 
-# Ou após clone do repositório:
+# Clone standalone:
 git clone https://github.com/DudaMoresco/work-kit.git
 bash work-kit/domain-kit/scripts/install-domain-kit.sh /path/to/architecture-hub
 ```
-
-No chat Cursor:
 
 ```text
 /domain.install
@@ -38,67 +36,49 @@ O script:
 - Copia comandos para `.cursor/skills/domain-*`
 - Copia know-how para `.domain/skills/` e contratos para `.domain/wrappers/`
 - Copia scripts, clarify e config para `.domain/`
-- Gera `.domain/mcp-status.json` com checagem de MCPs
+- Gera `.domain/mcp-status.json`
 
-**Alias deprecado:** `/workkit.init` — mesmo efeito, use `/domain.install`.
+**Alias deprecado:** `/workkit.init`.
 
 ### MCPs recomendados
 
 | MCP | Namespace | Uso |
 | --- | --- | --- |
-| GitHub | `user-github` | `/domain.init` e `/domain.scan` — ler repos |
-| PlantUML | `user-plantuml` | Validar diagramas nos fluxos (agente) |
-| PlantUML server | `.domain/scripts/start_plantuml_server.sh` | Renderizar diagramas no **dashboard** (porta **8765**) |
-| Notion | `user-Notion` | Opcional — alternativa a Confluence |
-
-Configure MCPs em **Cursor Settings → MCP**. Reexecute `/domain.install` após conectar.
-
-Servidor local (preview do dashboard):
+| GitHub | `user-github` | `/domain.init` e `/domain.scan` |
+| PlantUML | `user-plantuml` | Validar diagramas (agente) |
+| PlantUML server | `start_plantuml_server.sh` | Preview no dashboard (porta **8765**) |
+| Notion | `user-Notion` | Opcional |
 
 ```bash
 .domain/scripts/start_plantuml_server.sh
 ```
 
-Ver [references/plantuml-dashboard.md](references/plantuml-dashboard.md).
-
-### GitLab (sem MCP first-party)
-
-1. Instale [`glab`](https://gitlab.com/gitlab-org/cli) ou use [`dalvito-cli`](../../dalvito-cli/SKILL.md) se corporativo
-2. Ou: exporte docs → `products/{p}/01-product/00-scan/imports/` (detectado no init)
-3. Veja [wrappers/scan-gitlab.md](wrappers/scan-gitlab.md)
-
-### Confluence (sem MCP no workspace padrão)
-
-1. Exporte páginas (HTML/PDF) para `00-scan/imports/`
-2. Incluir no wizard da fase 0 do `/domain.init`
-3. Veja [wrappers/scan-confluence.md](wrappers/scan-confluence.md)
+GitLab / Confluence: [wrappers/scan-gitlab.md](wrappers/scan-gitlab.md), [wrappers/scan-confluence.md](wrappers/scan-confluence.md).
 
 ---
 
-## Passo 2 — Novo produto (`/domain.init`)
-
-No chat Cursor (com hub aberto):
+## Passo 2 — Novo produto (`/domain.init`) — fase Evidências
 
 ```text
 /domain.init meu-produto --initiative minha-iniciativa
 ```
 
-Cria índices **e conduz o primeiro scan** (plan mode):
-
 ```text
 products/meu-produto/
-├── README.md
+├── product-README.md            ← cartão PM
 ├── sources.yml
 ├── flows-registry.yml
 ├── domain-status.json
+├── CHANGELOG.md
 ├── 03-registry/produto.md
-├── 01-product/00-scan/          ← após OK do scan (G0)
+├── 01-product/00-scan/          ← após OK do scan
 │   ├── scan-manifest.json
+│   ├── sintese-evidencias.md
 │   └── README.md
 └── dashboard.html
 ```
 
-**Produto já no hub?** Use `--adopt`:
+**Produto já no hub?**
 
 ```text
 /domain.init produto-existente --adopt
@@ -107,36 +87,32 @@ products/meu-produto/
 
 ---
 
-## Passo 3 — Descoberta (`/domain.discover`)
+## Passo 3 — Descoberta (`/domain.discover`) — Estratégico + Descoberta
 
-Pré-condição: Gate G0 (scan ok via init).
+Pré-condição: fase **Evidências** PASS.
 
 ```text
 /domain.discover
 ```
 
-O agente conduz **descoberta DDD** (não refaz scan se G0 ok):
+1. Lacunas de negócio (0b)
+2. Um estágio DDD por sessão (`--stage auto|strategic|contexts|stories|event-storming`)
 
-1. **Negócio** — atores, MVP, legado
-2. **DDD** — estratégico, ES/stories, UL, BCs
+Modos: `as-is-first`, `incremental`, `minimal` — [COMMAND-GUIDE.md](COMMAND-GUIDE.md).
 
-Modos para produtos antigos: `--mode as-is-first`, `incremental`, `minimal` — ver [COMMAND-GUIDE.md](COMMAND-GUIDE.md).
-
-**Plan mode:** artefatos em `.draft/` até OK.
-
-**Re-sync de fontes:** `/domain.scan` se repos/docs mudaram.
+**Re-sync de fontes:** `/domain.scan`.
 
 ---
 
-## Passo 4 — Fluxos e modelagem
+## Passo 4 — Operacional
 
 ```text
 /domain.flow 01
-/domain.capability {bc}
+/domain.flow 02
 /domain.model --finalize
 ```
 
-Regenerar dashboard:
+Fluxos novos em `01-product/03-operacional/fluxos/` (não em `02-capabilities/`).
 
 ```bash
 .domain/scripts/regenerate_dashboard.sh products/meu-produto
@@ -146,31 +122,41 @@ Regenerar dashboard:
 
 ## Passo 5 — Handoff para arch-kit
 
-Quando `/domain.status` mostrar **Gate G2: PASS**:
+Quando `/domain.status` mostrar **Operacional: PASS**:
 
 ```text
 /arch.route
 ```
 
-(domain-kit terminou; arch-kit assume estilo, C4, ADR)
+Design tático, integração técnica, C4, ADR → arch-kit.  
+~~`/domain.capability`~~ está deprecated.
+
+---
+
+## Evolução depois do onboarding
+
+```text
+/domain.change --kind problem-new --title "…"
+# ou --kind evolution --title "…"
+```
+
+Registra P-n / E-n e sugere o próximo comando de fase.
 
 ---
 
 ## Checklist rápido
 
-- [ ] `/domain.install` executado sem erro
-- [ ] MCP GitHub verde (ou fontes manuais no init)
-- [ ] `/domain.init` criou produto + G0
-- [ ] `/domain.discover` executado (ou em andamento)
-- [ ] `dashboard.html` abre no browser
-- [ ] PlantUML: `start_plantuml_server.sh` + diagramas visíveis na aba Preview (se houver)
+- [ ] `/domain.install` ok (`.domain/skills/` presente)
+- [ ] MCP GitHub (ou imports manuais)
+- [ ] `/domain.init` → Evidências
+- [ ] `/domain.discover` em andamento ou PASS Estratégico/Descoberta
+- [ ] `/domain.flow` + `/domain.model --finalize` → Operacional
+- [ ] `product-README.md` atualizado
 - [ ] Leu [COMMAND-GUIDE.md](COMMAND-GUIDE.md)
 
 ---
 
 ## Suporte
 
-- Comandos e cenários legados: [COMMAND-GUIDE.md](COMMAND-GUIDE.md)
-- Estrutura interna: [HOW-IT-WORKS.md](HOW-IT-WORKS.md)
-- Inventário: [INVENTORY.md](INVENTORY.md)
-- Fixture completa: produto `oficina-mecanica` no hub
+- [COMMAND-GUIDE.md](COMMAND-GUIDE.md) · [HOW-IT-WORKS.md](HOW-IT-WORKS.md) · [INVENTORY.md](INVENTORY.md)
+- Exemplo de migração: [references/examples/notificacao-dividas-pendencias/](references/examples/notificacao-dividas-pendencias/)

@@ -10,7 +10,7 @@ Know-how DDD e de modelagem **incluído no kit** (repo autossuficiente). Não de
 | `event-storming-to-scenario-tables` | `/domain.discover` (opcional) |
 | `ddd-linguagem-e-contextos` | `/domain.discover` (contexts) |
 | `levantamento-requisitos` | `/domain.model` |
-| `fluxos-entregaveis` | `/domain.flow` (know-how; paths via wrapper) |
+| `fluxos-entregaveis` | `/domain.flow` (know-how; paths via wrapper → `03-operacional/fluxos/`) |
 | `fluxogramas-decisao` | `/domain.discover --mode as-is-first` |
 
 ## Arch-kit (bundled para referência / handoff)

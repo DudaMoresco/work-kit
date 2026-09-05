@@ -286,15 +286,6 @@ async function renderMermaidIn(container) {
   }
 }
 
-function showTab(name) {
-  document.querySelectorAll('.tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.tab === name);
-  });
-  document.querySelectorAll('.tab-panel').forEach(p => {
-    p.classList.toggle('active', p.id === 'panel-' + name);
-  });
-}
-
 async function setPreview(key, text) {
   const el = document.getElementById('doc-preview');
   if (!el) return;
@@ -304,10 +295,27 @@ async function setPreview(key, text) {
   await renderPlantUmlIn(el);
 }
 
+const app = document.querySelector('.app, .shell');
+const MODE_KEY = 'dk-dashboard-mode';
+
+function setMode(mode) {
+  if (!app) return;
+  const next = mode === 'artefatos' ? 'artefatos' : 'ciclo';
+  app.dataset.mode = next;
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    const on = btn.dataset.mode === next;
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  try { localStorage.setItem(MODE_KEY, next); } catch (_) {}
+}
+
 async function showFile(key, text, isDraft) {
-  showTab('artefatos');
+  setMode('artefatos');
   const wrap = document.getElementById('file-preview-wrap');
+  const empty = document.getElementById('preview-empty');
   if (wrap) wrap.hidden = false;
+  if (empty) empty.hidden = true;
   document.querySelectorAll('.file-item').forEach(x => {
     const itemKey = x.dataset.doc || x.dataset.draftKey;
     x.classList.toggle('selected', itemKey === key);
@@ -323,7 +331,9 @@ async function showFile(key, text, isDraft) {
 
 function hidePreview() {
   const wrap = document.getElementById('file-preview-wrap');
+  const empty = document.getElementById('preview-empty');
   if (wrap) wrap.hidden = true;
+  if (empty) empty.hidden = false;
   document.querySelectorAll('.file-item').forEach(x => x.classList.remove('selected'));
   try { localStorage.setItem('dk-center-view', 'overview'); } catch (_) {}
 }
@@ -333,29 +343,27 @@ function draftTextFor(key) {
     || Object.entries(DRAFTS).find(([p]) => p.endsWith(key))?.[1] || '';
 }
 
-document.querySelectorAll('.tab').forEach(el => {
-  el.addEventListener('click', () => {
-    const name = el.dataset.tab;
-    if (name) showTab(name);
-  });
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => setMode(btn.dataset.mode));
 });
 
-document.querySelectorAll('[data-tab]').forEach(el => {
-  if (el.classList.contains('tab')) return;
-  el.addEventListener('click', () => {
-    const name = el.dataset.tab;
-    if (name) showTab(name);
-  });
+document.getElementById('btn-goto-artefatos')?.addEventListener('click', () => {
+  setMode('artefatos');
 });
 
 document.querySelectorAll('.phase').forEach(btn => {
   btn.addEventListener('click', () => {
-    showTab('artefatos');
+    setMode('artefatos');
     const phase = btn.dataset.phase;
-    document.querySelectorAll('[data-phase-block]').forEach(block => {
-      const match = block.dataset.phaseBlock === phase;
-      block.classList.toggle('highlight', match);
-      if (match) block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const filter = document.getElementById('file-filter');
+    if (filter) {
+      filter.value = phase || '';
+      filter.dispatchEvent(new Event('input'));
+    }
+    document.querySelectorAll('.browse-nav .file-item').forEach(item => {
+      if (item.dataset.phase === phase) {
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     });
   });
 });
@@ -376,7 +384,7 @@ document.querySelectorAll('.file-item[data-doc]').forEach(li => {
   });
 });
 
-document.querySelectorAll('.file-item[data-draft-key], .nav-file-item[data-draft-key]').forEach(li => {
+document.querySelectorAll('.file-item[data-draft-key]').forEach(li => {
   const open = () => {
     const k = li.dataset.draftKey;
     showFile(k, draftTextFor(k), true);
@@ -395,6 +403,18 @@ document.querySelectorAll('a[data-doc]').forEach(a => {
   });
 });
 
+document.getElementById('file-filter')?.addEventListener('input', (e) => {
+  const q = (e.target.value || '').trim().toLowerCase();
+  document.querySelectorAll('.browse-nav .file-item').forEach(item => {
+    const name = (item.querySelector('.file-name')?.textContent || '').toLowerCase();
+    const tag = (item.querySelector('.file-tag')?.textContent || '').toLowerCase();
+    const phase = (item.dataset.phase || '').toLowerCase();
+    const path = (item.dataset.doc || item.dataset.draftKey || '').toLowerCase();
+    const hay = `${name} ${tag} ${phase} ${path}`;
+    item.hidden = Boolean(q) && !hay.includes(q);
+  });
+});
+
 document.getElementById('btn-copy-cmd')?.addEventListener('click', async () => {
   const cmd = document.getElementById('btn-copy-cmd')?.dataset.cmd || '';
   if (!cmd) return;
@@ -406,6 +426,12 @@ document.getElementById('btn-copy-cmd')?.addEventListener('click', async () => {
     setTimeout(() => { btn.textContent = old; }, 1200);
   } catch (_) {}
 });
+
+try {
+  setMode(localStorage.getItem(MODE_KEY) || 'ciclo');
+} catch (_) {
+  setMode('ciclo');
+}
 
 try {
   const saved = localStorage.getItem('dk-center-view');

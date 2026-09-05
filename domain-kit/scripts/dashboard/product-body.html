@@ -12,77 +12,76 @@
   </div>
 </header>
 
-<section class="journey" aria-label="Pipeline domain-kit">
-  <div class="journey-head">
-    <h2>Ciclo · install → init → discover* → flow* → model --finalize</h2>
-    <p class="journey-legend">Clique numa fase para filtrar artefatos</p>
+<div class="mode-bar">
+  <div class="mode-switch" role="tablist" aria-label="Modo do dashboard">
+    <button type="button" class="mode-btn active" data-mode="ciclo" role="tab" aria-selected="true">Ciclo</button>
+    <button type="button" class="mode-btn" data-mode="artefatos" role="tab" aria-selected="false">Artefatos</button>
   </div>
-  <div class="journey-track" id="journey-track">
-    {{JOURNEY_TRACK}}
-  </div>
-  <p class="journey-note">
-    Retrabalho de fase sobe de novo no discover/flow.
-    Loops laterais: <code>/domain.scan</code> (fonte mudou) e
-    <code>/domain.change</code> → trabalho → <code>--close</code> (E-n / P-n).
-  </p>
-</section>
-
-<div class="main-grid">
-  <section class="panel">
-    {{NOW_PANEL}}
-  </section>
-  <aside class="panel">
-    <p class="panel-label">Loops laterais</p>
-    {{LOOPS_PANEL}}
-  </aside>
+  <div class="mode-next">próximo: <code>{{NEXT_CMD}}</code></div>
 </div>
 
-<section class="work">
-  <div class="tabs" role="tablist">
-    <button type="button" class="tab active" data-tab="artefatos" role="tab">
-      Artefatos por fase <span class="count">{{ART_COUNT}}</span>
-    </button>
-    <button type="button" class="tab" data-tab="fluxos" role="tab">
-      Fluxos <span class="count">{{FLOW_COUNT}}</span>
-    </button>
-    <button type="button" class="tab" data-tab="rascunhos" role="tab">
-      Rascunhos <span class="count">{{DRAFT_COUNT}}</span>
-    </button>
-    <button type="button" class="tab" data-tab="mapa" role="tab">
-      Mapa de comandos
-    </button>
+<div id="view-ciclo">
+  <div class="main-grid">
+    <section class="panel">
+      {{NOW_PANEL}}
+    </section>
+    <aside class="panel">
+      <p class="panel-label">Loops laterais</p>
+      {{LOOPS_PANEL}}
+    </aside>
   </div>
 
-  <div class="tab-panels">
-    <div class="tab-panel active" id="panel-artefatos">
-      {{ARTIFACTS_BY_PHASE}}
-      <div id="file-preview-wrap" hidden>
+  <section class="journey" aria-label="Pipeline domain-kit">
+    <div class="journey-head">
+      <h2>Ciclo · install → init → discover* → flow* → model --finalize</h2>
+      <p class="journey-legend">Clique numa fase para filtrar a lista de artefatos</p>
+    </div>
+    <div class="journey-track" id="journey-track">
+      {{JOURNEY_TRACK}}
+    </div>
+    <p class="journey-note">
+      Retrabalho de fase sobe de novo no discover/flow.
+      Loops laterais: <code>/domain.scan</code> (fonte mudou) e
+      <code>/domain.change</code> → trabalho → <code>--close</code> (E-n / P-n).
+    </p>
+  </section>
+</div>
+
+<div id="view-artefatos">
+  <div class="browse">
+    <aside class="browse-nav">
+      <div class="browse-nav-head">
+        <h2>Arquivos</h2>
+        <span class="chip" style="padding:0.15rem 0.45rem">{{ART_COUNT}}</span>
+      </div>
+      <input type="search" class="browse-search" id="file-filter" placeholder="Filtrar nome ou tag…" autocomplete="off" />
+      <ul class="file-list" id="artifact-list">
+        {{ARTIFACT_LIST}}
+      </ul>
+    </aside>
+
+    <section class="browse-preview" aria-label="Preview">
+      <p class="browse-preview-empty" id="preview-empty">Selecione um artefato na lista.</p>
+      <div class="preview-panel" id="file-preview-wrap" hidden>
         <div class="file-view-bar">
-          <button type="button" class="btn-back" id="back-overview">Fechar preview</button>
+          <button type="button" class="btn-back" id="back-overview">Fechar</button>
           <span class="file-breadcrumb">
             <strong id="file-kind">Artefato</strong> / <code id="file-path">—</code>
           </span>
         </div>
         <div class="preview-body" id="doc-preview"></div>
       </div>
-    </div>
-
-    <div class="tab-panel" id="panel-fluxos">
-      {{FLOWS_TAB}}
-    </div>
-
-    <div class="tab-panel" id="panel-rascunhos">
-      {{DRAFTS_TAB}}
-    </div>
-
-    <div class="tab-panel" id="panel-mapa">
-      {{COMMAND_MAP}}
-    </div>
+    </section>
   </div>
-</section>
+</div>
 
-<div class="help">
-  <strong>Plan mode</strong> — rascunhos não contam nas fases até promote.
-  O dashboard conta o ciclo do domain-kit, não só lista arquivos.
+<div class="help help-ciclo">
+  <strong>Modo Ciclo</strong> — onde você está, próximo comando e loops.
+  Use <strong>Artefatos</strong> para ler MDs e diagramas.
+  Plan mode: rascunhos não contam nas fases até promote.
+</div>
+<div class="help help-artefatos">
+  <strong>Modo Artefatos</strong> — lista + preview.
+  O chip <code>próximo</code> no topo mantém o contexto do ciclo.
   Docs: <code>domain-kit/GUIDE.md</code>
 </div>

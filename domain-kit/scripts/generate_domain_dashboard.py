@@ -1095,7 +1095,7 @@ def render_now_panel(
         f'<div class="cta-actions">'
         f'<button type="button" class="btn primary" id="btn-copy-cmd" '
         f'data-cmd="{escape(next_cmd)}">Copiar comando</button>'
-        f'<button type="button" class="btn ghost" data-tab="fluxos">Ver fluxos</button>'
+        f'<button type="button" class="btn ghost" id="btn-goto-artefatos">Ver artefatos</button>'
         f"</div>"
         f"</div>"
         f"{checklist}"
@@ -1161,67 +1161,80 @@ def render_loops_panel(status: dict, product: str) -> str:
     return "".join(parts)
 
 
-def _render_file_button(rel: str, *, draft: bool = False, badge: str = "ok") -> str:
-    badge_cls = "draft" if draft or badge in ("aguardando OK", "rascunho") else (
-        "miss" if badge in ("pendente", "missing") else ""
+PHASE_TAG_LABELS = {
+    "evidencias": "evidências",
+    "estrategico": "estratégico",
+    "descoberta": "descoberta",
+    "operacional": "operacional",
+    "rascunho": "rascunho",
+    "fora": "fora",
+    "outros": "outros",
+}
+
+
+def _file_basename(rel: str) -> str:
+    name = rel.replace("\\", "/").rstrip("/").split("/")[-1]
+    return name or rel
+
+
+def _render_file_button(
+    rel: str,
+    *,
+    draft: bool = False,
+    phase: str | None = None,
+) -> str:
+    tag_key = "rascunho" if draft else (phase or _artifact_phase(rel))
+    tag_label = PHASE_TAG_LABELS.get(tag_key, tag_key)
+    data = (
+        f'data-draft-key="{escape(rel)}"'
+        if draft
+        else f'data-doc="{escape(rel)}"'
     )
-    data = f'data-draft-key="{escape(rel)}"' if draft else f'data-doc="{escape(rel)}"'
     return (
         f'<li><button type="button" class="file-item" {data} '
-        f'role="button" tabindex="0">'
-        f'<span class="file-name">{escape(rel)}</span>'
-        f'<span class="file-badge {badge_cls}">{escape(badge)}</span>'
+        f'data-phase="{escape(tag_key)}" role="button" tabindex="0">'
+        f'<span class="file-name">{escape(_file_basename(rel))}</span>'
+        f'<span class="file-tag {escape(tag_key)}">{escape(tag_label)}</span>'
         f"</button></li>"
     )
+
+
+def render_artifact_list(
+    artifacts: list[tuple[str, Path]],
+    pending: list[dict] | None = None,
+    draft_files: list[tuple[str, Path]] | None = None,
+) -> str:
+    """Flat list: filename + phase/draft tag (path shown only in preview)."""
+    items: list[str] = []
+    for rel, _ in artifacts:
+        items.append(_render_file_button(rel, phase=_artifact_phase(rel)))
+
+    seen_drafts: set[str] = set()
+    if pending:
+        for entry in pending:
+            target = entry.get("targetPath", "?")
+            if target in seen_drafts:
+                continue
+            seen_drafts.add(target)
+            items.append(_render_file_button(target, draft=True))
+    if draft_files:
+        for rel, _ in draft_files:
+            if rel in seen_drafts:
+                continue
+            seen_drafts.add(rel)
+            items.append(_render_file_button(rel, draft=True))
+
+    if not items:
+        return '<li class="nav-file-empty">Nenhum artefato promovido.</li>'
+    return "".join(items)
 
 
 def render_artifacts_by_phase(
     artifacts: list[tuple[str, Path]],
     phases: dict[str, str],
 ) -> str:
-    buckets: dict[str, list[str]] = {p: [] for p in PHASE_ORDER}
-    buckets["fora"] = []
-    buckets["outros"] = []
-    for rel, _ in artifacts:
-        buckets.setdefault(_artifact_phase(rel), []).append(rel)
-
-    blocks: list[str] = []
-    labels = {
-        "evidencias": "Evidências",
-        "estrategico": "Estratégico",
-        "descoberta": "Descoberta",
-        "operacional": "Operacional",
-        "fora": "Fora do escopo",
-        "outros": "Outros",
-    }
-    for key in [*PHASE_ORDER, "fora", "outros"]:
-        items = buckets.get(key) or []
-        if not items and key in ("fora", "outros"):
-            continue
-        st = phases.get(key, "")
-        if key in PHASE_ORDER:
-            if st == "PASS":
-                status_html = '<span class="status ok">pass</span>'
-            elif st == "FAIL":
-                status_html = '<span class="status current">agora</span>'
-            else:
-                status_html = '<span class="status pending">pendente</span>'
-        else:
-            status_html = '<span class="status pending">ref</span>'
-        if items:
-            lis = "".join(_render_file_button(rel) for rel in items)
-        else:
-            lis = '<li class="nav-file-empty">Nenhum artefato nesta fase.</li>'
-        blocks.append(
-            f'<div class="phase-block" data-phase-block="{escape(key)}">'
-            f'<div class="phase-block-head">'
-            f"<h3>{escape(labels.get(key, key))}</h3>"
-            f"{status_html}"
-            f"</div>"
-            f'<ul class="file-list">{lis}</ul>'
-            f"</div>"
-        )
-    return "".join(blocks) or '<div class="empty">Nenhum artefato promovido.</div>'
+    """compat — prefer render_artifact_list."""
+    return render_artifact_list(artifacts)
 
 
 def render_flows_tab(flows: list[dict]) -> str:
@@ -1425,18 +1438,14 @@ def build_product_dashboard(hub: Path, product: str) -> str:
             "SCAN": escape(scan),
             "SCAN_CHIP_CLASS": scan_chip,
             "DISCOVER_TOTAL": str(discover_total),
-            "ART_COUNT": str(art_count),
-            "FLOW_COUNT": str(len(flows)),
-            "DRAFT_COUNT": str(draft_count),
+            "ART_COUNT": str(art_count + draft_count),
+            "NEXT_CMD": escape(str(next_cmd)),
             "JOURNEY_TRACK": render_journey_track(phases, p_idx),
             "NOW_PANEL": render_now_panel(
                 str(next_cmd), phases, discover_fields, operacional_fields, p_idx
             ),
             "LOOPS_PANEL": render_loops_panel(status, product),
-            "ARTIFACTS_BY_PHASE": render_artifacts_by_phase(artifacts, phases),
-            "FLOWS_TAB": render_flows_tab(flows),
-            "DRAFTS_TAB": render_drafts_tab(pending, draft_files),
-            "COMMAND_MAP": render_command_map(phases, str(next_cmd)),
+            "ARTIFACT_LIST": render_artifact_list(artifacts, pending, draft_files),
         },
     )
 

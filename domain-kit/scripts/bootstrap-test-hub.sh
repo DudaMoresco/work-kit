@@ -37,14 +37,21 @@ bash "${SCRIPT_DIR}/install-domain-kit.sh" "${TEST_HUB}"
 # skills_pack: test-hub lives inside domain-kit — point to parent package
 CONFIG="${TEST_HUB}/.domain/config.yml"
 python3 - <<PY
+import re
 from pathlib import Path
 
 path = Path("${CONFIG}")
 text = path.read_text(encoding="utf-8")
-text = text.replace("skills_pack: ../work-kit/domain-kit", "skills_pack: ..")
-text = text.replace("# Monorepo work-hub: ../work-kit/domain-kit", "# test-hub sandbox: ..")
-if "skills_pack: .." not in text:
-    raise SystemExit("config.yml patch failed — unexpected format")
+text, n = re.subn(r"(?m)^(skills_pack:\s*).+$", r"\1..", text)
+if n == 0:
+    raise SystemExit("config.yml patch failed — skills_pack not found")
+text = re.sub(
+    r"(?m)^#\s*(Monorepo|Clone).*$",
+    "# test-hub sandbox: skills_pack → parent package",
+    text,
+)
+if not re.search(r"(?m)^skills_pack:\s*\.\.\s*$", text):
+    raise SystemExit("config.yml patch failed — unexpected skills_pack value")
 path.write_text(text, encoding="utf-8")
 print(f"Patched {path}")
 PY
@@ -81,7 +88,7 @@ MD
 
 # Demo product — lazy init (indices only)
 PRODUCT_DIR="${TEST_HUB}/products/${PRODUCT}"
-mkdir -p "${PRODUCT_DIR}/03-registry"
+mkdir -p "${PRODUCT_DIR}/05-decisoes"
 
 substitute_template() {
   local src="$1"
@@ -120,8 +127,8 @@ PY
 substitute_template "${KIT_ROOT}/templates/domain-status.json" "${PRODUCT_DIR}/domain-status.json"
 substitute_template "${KIT_ROOT}/templates/product-README.md" "${PRODUCT_DIR}/product-README.md"
 
-# Registry stub
-cat > "${PRODUCT_DIR}/03-registry/produto.md" <<MD
+# Registry stub (canônico: 05-decisoes)
+cat > "${PRODUCT_DIR}/05-decisoes/produto.md" <<MD
 # Registry — ${PRODUCT}
 
 Decisões de produto (D-n). Preencher via \`/domain.decision\` e fluxos.

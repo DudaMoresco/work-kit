@@ -2,6 +2,9 @@
 
 Copiar e preencher. Manter seções na mesma ordem dos exemplos canônicos.
 
+**Path canônico:** `products/{produto}/01-product/03-discovery/00-as-is/`  
+Não inventar path fora de [hub-paths.md](../../../references/hub-paths.md).
+
 ---
 
 ## README.md
@@ -9,8 +12,8 @@ Copiar e preencher. Manter seções na mesma ordem dos exemplos canônicos.
 ```markdown
 # Fluxogramas de decisão — <Feature> (as-is)
 
-Árvores de **regras de negócio** do legado / produção (<contexto curto>),
-derivadas do comportamento em produção. Diagramas em **PlantUML**:
+Árvores de **regras de negócio** do sistema em produção (<contexto curto>),
+derivadas do comportamento observável. Diagramas em **PlantUML**:
 fluxograma de decisão + diagrama de sequência com **componentes do C4**
 (Containers + <ComponentView>). Eventos gerados estão listados em cada fluxo.
 

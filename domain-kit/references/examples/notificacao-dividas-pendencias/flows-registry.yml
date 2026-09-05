@@ -7,8 +7,8 @@ flows: []
 # - id: fluxo-01
 #   title: Título do cenário de negócio
 #   bc: orquestracao-de-notificacoes
-#   path: 01-product/03-operacional/fluxos/01-slug.md
+#   path: 01-product/04-operacional/fluxos/01-slug.md
 #   deps: []
 #   status: draft          # draft | clarifying | ready | superseded
 #   decisoes: [D-01]
-#   arch_ref: arch/fluxos/01-slug-tecnico.md   # opcional — arch-kit
+#   tech_ref: arch/fluxos/01-slug-tecnico.md   # opcional — fora do escopo do domain-kit

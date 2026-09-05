@@ -1,3 +1,5 @@
+> **Excerpt de exemplo** — árvore parcial para ilustrar cartão PM e paths; não é um produto completo alinhado a todas as fases. Mapa canônico: [hub-paths.md](../../hub-paths.md).
+
 # Notificação de Dívidas e Pendências
 
 > Cartão do produto — visão PM + índice de artefatos do domain-kit.
@@ -70,15 +72,14 @@ _Nenhuma sessão evolutiva aberta._ Use `/domain.change` para registrar problema
 
 ### Operacional
 
-- [Fluxos de negócio](01-product/03-operacional/fluxos/) _(0 promovidos)_
-- [Requisitos NFR](04-platform/01-non-functional/01-requisitos.md) _(pendente)_
-- [Registry de decisões](03-registry/produto.md)
+- [Fluxos de negócio](01-product/04-operacional/fluxos/) _(0 promovidos)_
+- [Requisitos NFR](01-product/04-operacional/requisitos.md) _(pendente)_
+- [Registry de decisões](05-decisoes/produto.md)
 - [Catálogo de fluxos](flows-registry.yml)
 
-### Arch-kit (legado adotado)
+### Detalhe técnico (fora do escopo)
 
-- [Integração técnica](arch/01-integration/01-contextos.md)
-- Capabilities: `entrega-de-notificacoes`, `orquestracao-de-notificacoes`
+`arch/` é opcional e **nunca** gated pelo domain-kit. Capabilities de referência: `entrega-de-notificacoes`, `orquestracao-de-notificacoes`.
 
 ## Problemas e evoluções em aberto
 

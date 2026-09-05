@@ -1,6 +1,6 @@
 # Domain-Kit — Onboarding
 
-Setup para **novo desenvolvedor** ou **novo produto** no architecture-hub.
+Setup para **novo desenvolvedor** ou **novo produto** em um hub de produtos.
 
 **Mapa de comandos:** [COMMAND-GUIDE.md](COMMAND-GUIDE.md) · [SKILL.md](SKILL.md)
 
@@ -11,20 +11,15 @@ Setup para **novo desenvolvedor** ou **novo produto** no architecture-hub.
 - Cursor com Agent Skills habilitados
 - Python 3.10+ (scripts de dashboard e fases — stdlib only)
 - **Docker** (opcional) — servidor PlantUML para preview no dashboard
-- Clone do `architecture-hub` (ou monorepo `work-hub`)
-- Clone do **domain-kit / work-kit** — skills DDD em `domain-kit/skills/` (sem `~/.cursor/skills/`)
+- Clone do hub de produtos (raiz onde vivem `products/`; ex.: pasta nomeada `architecture-hub`)
+- Clone do **domain-kit** — skills DDD em `domain-kit/skills/` (sem `~/.cursor/skills/`)
 
 ---
 
 ## Passo 1 — Workspace (`/domain.install`)
 
 ```bash
-# Monorepo work-hub:
-bash ../work-kit/domain-kit/scripts/install-domain-kit.sh /path/to/architecture-hub
-
-# Clone standalone:
-git clone https://github.com/DudaMoresco/work-kit.git
-bash work-kit/domain-kit/scripts/install-domain-kit.sh /path/to/architecture-hub
+bash domain-kit/scripts/install-domain-kit.sh /caminho/do/hub
 ```
 
 ```text
@@ -37,8 +32,6 @@ O script:
 - Copia know-how para `.domain/skills/` e contratos para `.domain/wrappers/`
 - Copia scripts, clarify e config para `.domain/`
 - Gera `.domain/mcp-status.json`
-
-**Alias deprecado:** `/workkit.init`.
 
 ### MCPs recomendados
 
@@ -70,7 +63,7 @@ products/meu-produto/
 ├── flows-registry.yml
 ├── domain-status.json
 ├── CHANGELOG.md
-├── 03-registry/produto.md
+├── 05-decisoes/produto.md
 ├── 01-product/00-scan/          ← após OK do scan
 │   ├── scan-manifest.json
 │   ├── sintese-evidencias.md
@@ -112,7 +105,7 @@ Modos: `as-is-first`, `incremental`, `minimal` — [COMMAND-GUIDE.md](COMMAND-GU
 /domain.model --finalize
 ```
 
-Fluxos novos em `01-product/03-operacional/fluxos/` (não em `02-capabilities/`).
+Fluxos em `01-product/04-operacional/fluxos/` — ver [hub-paths.md](references/hub-paths.md).
 
 ```bash
 .domain/scripts/regenerate_dashboard.sh products/meu-produto
@@ -120,16 +113,13 @@ Fluxos novos em `01-product/03-operacional/fluxos/` (não em `02-capabilities/`)
 
 ---
 
-## Passo 5 — Handoff para arch-kit
+## Passo 5 — Fim do pipeline do domain-kit
 
-Quando `/domain.status` mostrar **Operacional: PASS**:
+Quando `/domain.status` mostrar **Operacional: PASS**, o mapeamento de negócio → domínio neste kit está completo.
 
-```text
-/arch.route
-```
+A próxima etapa técnica (design de solução, implementação) fica **fora do escopo do domain-kit**.
 
-Design tático, integração técnica, C4, ADR → arch-kit.  
-~~`/domain.capability`~~ está deprecated.
+~~`/domain.capability`~~ está **fora do escopo do domain-kit**.
 
 ---
 
@@ -159,4 +149,4 @@ Registra P-n / E-n e sugere o próximo comando de fase.
 ## Suporte
 
 - [COMMAND-GUIDE.md](COMMAND-GUIDE.md) · [HOW-IT-WORKS.md](HOW-IT-WORKS.md) · [INVENTORY.md](INVENTORY.md)
-- Exemplo de migração: [references/examples/notificacao-dividas-pendencias/](references/examples/notificacao-dividas-pendencias/)
+- Exemplo: [references/examples/notificacao-dividas-pendencias/](references/examples/notificacao-dividas-pendencias/)

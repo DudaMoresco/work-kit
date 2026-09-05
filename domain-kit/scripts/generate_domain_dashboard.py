@@ -19,7 +19,6 @@ PIPELINE_STEPS = [
     ("estrategico", "Estratégico", "/domain.discover"),
     ("descoberta", "Descoberta", "/domain.discover"),
     ("operacional", "Operacional", "/domain.flow"),
-    ("arch", "Arch-kit", "/arch.route"),
 ]
 
 PHASE_ORDER = ["evidencias", "estrategico", "descoberta", "operacional"]
@@ -63,38 +62,97 @@ PHASE_DISPLAY: dict[str, dict[str, str | None]] = {
             "e decisões D-n — sem design tático nem integração técnica."
         ),
         "command": "/domain.flow",
-        "handoff": "Handoff → arch-kit",
+        "handoff": "Fim do domain-kit",
     },
 }
 
-# Legacy alias for render_gate_card
+# compat alias for render_gate_card
 GATE_DISPLAY = PHASE_DISPLAY
 
 DEFAULT_PLANTUML_SERVER = "http://127.0.0.1:8765"
-DASHBOARD_VENDOR_REL = "dashboard-assets/vendor"
+DASHBOARD_ASSETS_REL = "dashboard-assets"
+DASHBOARD_VENDOR_REL = f"{DASHBOARD_ASSETS_REL}/vendor"
 DASHBOARD_VENDOR_FILES = ("marked.min.js", "mermaid.min.js")
+DASHBOARD_UI_FILES = ("dashboard.css", "dashboard.js", "hub-index.css")
+DASHBOARD_TEMPLATE_DIR = Path(__file__).resolve().parent / "dashboard"
+
+
+def _dashboard_templates_dir() -> Path:
+    return DASHBOARD_TEMPLATE_DIR
+
+
+def load_dashboard_template(name: str) -> str:
+    path = _dashboard_templates_dir() / name
+    if not path.is_file():
+        raise FileNotFoundError(f"Dashboard template missing: {path}")
+    return path.read_text(encoding="utf-8")
+
+
+def fill_template(template: str, mapping: dict[str, str]) -> str:
+    """Replace {{KEY}} placeholders. Values must already be escaped when needed."""
+    out = template
+    for key, value in mapping.items():
+        out = out.replace("{{" + key + "}}", value)
+    leftover = re.findall(r"\{\{([A-Z0-9_]+)\}\}", out)
+    if leftover:
+        raise ValueError(f"Unfilled dashboard placeholders: {sorted(set(leftover))}")
+    return out
 
 
 def sync_dashboard_vendor_assets(hub: Path) -> Path:
-    """Copy vendor JS to a visible hub folder (Cursor/Simple Browser blocks .domain/)."""
-    src_dir = Path(__file__).resolve().parent / "vendor"
-    dest_dir = hub / DASHBOARD_VENDOR_REL
-    dest_dir.mkdir(parents=True, exist_ok=True)
+    """Copy vendor + UI assets to hub (Cursor/Simple Browser blocks .domain/)."""
+    scripts_dir = Path(__file__).resolve().parent
+    vendor_src = scripts_dir / "vendor"
+    vendor_dest = hub / DASHBOARD_VENDOR_REL
+    vendor_dest.mkdir(parents=True, exist_ok=True)
     for name in DASHBOARD_VENDOR_FILES:
-        src = src_dir / name
+        src = vendor_src / name
         if not src.is_file():
-            raise FileNotFoundError(f"Vendor asset missing: {src}")
-        shutil.copy2(src, dest_dir / name)
-    return dest_dir
+            print(
+                f"Warning: vendor asset missing ({src}); "
+                "markdown/mermaid preview may be limited.",
+                file=sys.stderr,
+            )
+            continue
+        shutil.copy2(src, vendor_dest / name)
+
+    ui_src = scripts_dir / "dashboard"
+    ui_dest = hub / DASHBOARD_ASSETS_REL
+    ui_dest.mkdir(parents=True, exist_ok=True)
+    for name in DASHBOARD_UI_FILES:
+        src = ui_src / name
+        if not src.is_file():
+            print(f"Warning: dashboard UI asset missing ({src})", file=sys.stderr)
+            continue
+        shutil.copy2(src, ui_dest / name)
+    return ui_dest
+
+
+def dashboard_asset_prefix(depth: int = 2) -> str:
+    """Relative path from dashboard.html to dashboard-assets/."""
+    prefix = "/".join([".."] * depth) if depth else "."
+    return f"{prefix}/{DASHBOARD_ASSETS_REL}" if depth else f"./{DASHBOARD_ASSETS_REL}"
 
 
 def dashboard_vendor_script_tags(depth: int = 2) -> str:
     """Script tags relative to dashboard.html (products/{p}/ = depth 2)."""
-    prefix = "/".join([".."] * depth)
-    base = f"{prefix}/{DASHBOARD_VENDOR_REL}"
-    return "\n".join(
-        f'<script src="{base}/{name}"></script>' for name in DASHBOARD_VENDOR_FILES
-    )
+    base = f"{dashboard_asset_prefix(depth)}/vendor"
+    cdn = {
+        "marked.min.js": "https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js",
+        "mermaid.min.js": "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js",
+    }
+    tags = []
+    for name in DASHBOARD_VENDOR_FILES:
+        local = f"{base}/{name}"
+        fallback = cdn.get(name, "")
+        if fallback:
+            tags.append(
+                f'<script src="{local}" '
+                f"onerror=\"this.onerror=null;this.src='{fallback}'\"></script>"
+            )
+        else:
+            tags.append(f'<script src="{local}"></script>')
+    return "\n".join(tags)
 
 
 def load_plantuml_server(hub: Path) -> str:
@@ -175,7 +233,7 @@ def phase_status(hub: Path, product: str) -> dict[str, str]:
 
 
 def gate_status(hub: Path, product: str) -> dict[str, str]:
-    """Legacy alias — maps phases to G0/G1/G2 for backward compatibility."""
+    """compat — maps phases to G0/G1/G2."""
     phases = phase_status(hub, product)
     g0 = phases.get("evidencias") == "PASS"
     g1 = phases.get("estrategico") == "PASS" and phases.get("descoberta") == "PASS"
@@ -188,33 +246,29 @@ def gate_status(hub: Path, product: str) -> dict[str, str]:
 
 
 def collect_artifacts(product_dir: Path) -> list[tuple[str, Path]]:
-    root_files = ["CHANGELOG.md", "README.md", "product-README.md"]
     found: list[tuple[str, Path]] = []
     seen: set[str] = set()
-    for name in root_files:
-        p = product_dir / name
-        if p.is_file() and name not in seen:
-            seen.add(name)
-            found.append((name, p))
+
+    def add(rel: str, p: Path) -> None:
+        if rel in seen or not p.is_file():
+            return
+        seen.add(rel)
+        found.append((rel, p))
+
+    for name in ("CHANGELOG.md", "README.md", "product-README.md", "sources.yml", "flows-registry.yml"):
+        add(name, product_dir / name)
+
     patterns = [
         "01-product/**/*.md",
-        "02-capabilities/**/*.md",
-        "03-registry/*.md",
-        "04-platform/**/*.md",
+        "05-decisoes/*.md",
         "arch/**/*.md",
     ]
-    found: list[tuple[str, Path]] = []
-    seen: set[str] = set()
     for pat in patterns:
         for p in sorted(product_dir.glob(pat)):
-            if not p.is_file():
-                continue
             rel = p.relative_to(product_dir).as_posix()
             if rel.startswith(".draft/"):
                 continue
-            if rel not in seen:
-                seen.add(rel)
-                found.append((rel, p))
+            add(rel, p)
     return found
 
 
@@ -390,9 +444,21 @@ def compute_discover_fields(product_dir: Path, status: dict) -> list[dict]:
     return fields
 
 
-def _file_field(key: str, label: str, product_dir: Path, discover: dict, rel: str) -> dict:
-    canonical = (product_dir / rel).is_file()
-    draft = _draft_has(product_dir, rel)
+def _file_field(
+    key: str,
+    label: str,
+    product_dir: Path,
+    discover: dict,
+    rel: str,
+    alt_rels: list[str] | None = None,
+) -> dict:
+    alt_rels = alt_rels or []
+    canonical = (product_dir / rel).is_file() or any(
+        (product_dir / a).is_file() for a in alt_rels
+    )
+    draft = _draft_has(product_dir, rel) or any(
+        _draft_has(product_dir, a) for a in alt_rels
+    )
     json_st = str(discover.get(key, "pending"))
     if canonical or json_st in ("ready", "complete"):
         return {"key": key, "label": label, "pct": 100, "state": "ready", "hint": "promovido"}
@@ -453,13 +519,19 @@ def compute_operacional_fields(product_dir: Path, status: dict) -> list[dict]:
     model = status.get("operacional") or status.get("model") or {}
     fields: list[dict] = []
 
-    req_path = "04-platform/01-non-functional/01-requisitos.md"
+    req_path = "01-product/04-operacional/requisitos.md"
     fields.append(
-        _file_field("requisitos", "Requisitos NFR (produto)", product_dir, model, req_path)
+        _file_field(
+            "requisitos",
+            "Requisitos NFR (produto)",
+            product_dir,
+            model,
+            req_path,
+        )
     )
 
     reg_path = product_dir / "flows-registry.yml"
-    op_dir = product_dir / "01-product/03-operacional/fluxos"
+    op_dir = product_dir / "01-product/04-operacional/fluxos"
     n_op = _count_md_in_dir(op_dir)
     if reg_path.is_file():
         text = reg_path.read_text(encoding="utf-8")
@@ -481,14 +553,20 @@ def compute_operacional_fields(product_dir: Path, status: dict) -> list[dict]:
         {"key": "fluxos", "label": "Fluxos operacionais", "pct": f_pct, "state": f_state, "hint": f_hint}
     )
 
-    reg_md = "03-registry/produto.md"
+    reg_md = "05-decisoes/produto.md"
     fields.append(
-        _file_field("registry", "Registry D-n", product_dir, model, reg_md)
+        _file_field(
+            "registry",
+            "Registry D-n",
+            product_dir,
+            model,
+            reg_md,
+        )
     )
     return fields
 
 
-def render_phase_card(phase_id: str, status: str) -> str:
+def render_phase_card(phase_id: str, status: str, *, compact: bool = False) -> str:
     meta = PHASE_DISPLAY.get(phase_id, {})
     title = str(meta.get("title", phase_id))
     subtitle = str(meta.get("subtitle", phase_id))
@@ -500,18 +578,19 @@ def render_phase_card(phase_id: str, status: str) -> str:
     handoff_html = ""
     if handoff:
         handoff_html = (
-            f'<span class="gate-card-meta-item">Handoff: <strong>{escape(handoff)}</strong></span>'
+            f'<span class="phase-card-meta-item">Handoff: <strong>{escape(handoff)}</strong></span>'
         )
+    desc_html = "" if compact else f'<p class="phase-card-desc">{escape(description)}</p>'
     return (
-        f'<article class="gate-card {cls}">'
-        f'<div class="gate-card-head">'
-        f'<span class="gate-card-sub">{escape(subtitle)}</span>'
-        f'<span class="gate-card-badge">{escape(badge)}</span>'
+        f'<article class="phase-card {cls}">'
+        f'<div class="phase-card-head">'
+        f'<span class="phase-card-sub">{escape(subtitle)}</span>'
+        f'<span class="phase-card-badge">{escape(badge)}</span>'
         f"</div>"
-        f'<h4 class="gate-card-title">{escape(title)}</h4>'
-        f'<p class="gate-card-desc">{escape(description)}</p>'
-        f'<div class="gate-card-meta">'
-        f'<span class="gate-card-meta-item">Comando: <code>{escape(command)}</code></span>'
+        f'<h4 class="phase-card-title">{escape(title)}</h4>'
+        f"{desc_html}"
+        f'<div class="phase-card-meta">'
+        f'<span class="phase-card-meta-item">Comando: <code>{escape(command)}</code></span>'
         f"{handoff_html}"
         f"</div>"
         f"</article>"
@@ -519,55 +598,201 @@ def render_phase_card(phase_id: str, status: str) -> str:
 
 
 def render_gate_card(gate_id: str, status: str) -> str:
-    """Legacy — redirects to phase cards when possible."""
-    legacy_map = {"G0": "evidencias", "G1": "estrategico", "G2": "operacional"}
-    pid = legacy_map.get(gate_id, gate_id)
+    """compat — thin redirect to phase cards."""
+    gate_map = {"G0": "evidencias", "G1": "estrategico", "G2": "operacional"}
+    pid = gate_map.get(gate_id, gate_id)
     if pid in PHASE_DISPLAY:
         return render_phase_card(pid, status)
     return render_phase_card(gate_id, status)
 
 
+def _extract_product_readme_fields(text: str) -> dict[str, str]:
+    """Pull short PM lines from product-README.md."""
+    out: dict[str, str] = {}
+    title_m = re.search(r"^#\s+(.+)$", text, re.M)
+    if title_m:
+        out["title"] = title_m.group(1).strip()
+    for key, label in (
+        ("o_que_e", r"O que é"),
+        ("problema", r"Problema que resolve"),
+        ("onde", r"Onde está disponível"),
+    ):
+        m = re.search(rf"\*\*{label}:\*\*\s*(.+)$", text, re.M)
+        if m:
+            out[key] = m.group(1).strip()
+    return out
+
+
+def render_product_hero(product_dir: Path, phases: dict[str, str]) -> str:
+    """Hero cartão PM from product-README.md (Onda 1 layout)."""
+    card = product_dir / "product-README.md"
+    if not card.is_file():
+        return (
+            '<div class="product-hero product-hero-empty">'
+            "<p>Sem <code>product-README.md</code> — rode <code>/domain.init</code>.</p>"
+            "</div>"
+        )
+    fields = _extract_product_readme_fields(card.read_text(encoding="utf-8"))
+    title = fields.get("title") or product_dir.name
+    o_que = fields.get("o_que_e", "")
+    problema = fields.get("problema", "")
+    pills = "".join(
+        f'<span class="phase-pill {escape(phases.get(p, "?").lower())}">'
+        f"{escape(str(PHASE_DISPLAY.get(p, {}).get('subtitle', p)))} · "
+        f"{escape(phases.get(p, '?'))}</span>"
+        for p in PHASE_ORDER
+    )
+    body_bits = []
+    if o_que:
+        body_bits.append(f"<p><strong>O que é:</strong> {escape(o_que)}</p>")
+    if problema:
+        body_bits.append(f"<p><strong>Problema:</strong> {escape(problema)}</p>")
+    if not body_bits:
+        body_bits.append(
+            '<p class="muted">Preencha a visão geral no cartão após contexts.</p>'
+        )
+    return (
+        f'<section class="product-hero" aria-label="Cartão do produto">'
+        f'<div class="product-hero-top">'
+        f'<div class="product-hero-copy">'
+        f'<p class="product-hero-kicker">Cartão do produto</p>'
+        f"<h2>{escape(title)}</h2>"
+        f"{''.join(body_bits)}"
+        f"</div>"
+        f'<a class="btn-product-card" data-doc="product-README.md" href="#">'
+        f"Abrir product-README.md</a>"
+        f"</div>"
+        f'<div class="product-hero-pills">{pills}</div>'
+        f"</section>"
+    )
 
 
 def render_product_card_link(product_dir: Path) -> str:
-    """Link to product-README.md cartão do produto."""
-    card = product_dir / "product-README.md"
-    if not card.is_file():
-        return ""
-    return (
-        '<div class="product-card-link">'
-        '<a class="btn-product-card" data-doc="product-README.md" href="#">'
-        "Cartão do produto"
-        "</a>"
-        '<span class="product-card-hint">Visão PM · benefícios · índice de artefatos</span>'
-        "</div>"
-    )
+    """Backward-compatible alias — prefer render_product_hero."""
+    return render_product_hero(product_dir, {p: "?" for p in PHASE_ORDER})
 
 
 def render_active_change_banner(status: dict) -> str:
     """Banner when an evolutionary session is open (/domain.change)."""
     ac = status.get("activeChange")
     if not ac or not isinstance(ac, dict):
-        return ""
+        return (
+            '<div class="active-change-empty" role="status">'
+            "<strong>Nenhuma sessão evolutiva</strong> — use "
+            "<code>/domain.change</code> para problema (P-n) ou evolução (E-n)."
+            "</div>"
+        )
     kind = ac.get("kind", "—")
     cid = ac.get("id", "—")
     title = ac.get("title", "")
     cmd = ac.get("suggestedCommand", "")
     phases = ", ".join(ac.get("phasesImpacted", [])) or "—"
-    title_bit = f" — {title}" if title else ""
+    title_bit = f" — {escape(str(title))}" if title else ""
     cmd_bit = (
         f'<p class="active-change-cmd">Próximo: <code>{escape(cmd)}</code></p>'
         if cmd
         else ""
     )
+    doc_link = (
+        "01-product/02-domain/evolucoes.md"
+        if str(kind).startswith("evolution") or str(cid).upper().startswith("E")
+        else "01-product/02-domain/abertos.md"
+    )
+    link_label = "evolucoes.md" if "evolucoes" in doc_link else "abertos.md"
     return (
         f'<div class="active-change-banner" role="status">'
-        f'<strong>Sessão ativa</strong> · {escape(kind)} · <code>{escape(cid)}</code>'
-        f"{escape(title_bit)}"
+        f'<div class="active-change-main">'
+        f"<strong>Sessão ativa</strong> · {escape(str(kind))} · "
+        f"<code>{escape(str(cid))}</code>{title_bit}"
         f'<span class="active-change-phases">Fases: {escape(phases)}</span>'
         f"{cmd_bit}"
         f"</div>"
+        f'<div class="active-change-actions">'
+        f'<a class="btn-inline" data-doc="{escape(doc_link)}" href="#">{escape(link_label)}</a>'
+        f'<span class="active-change-hint">Encerrar: <code>/domain.change --close</code></span>'
+        f"</div>"
+        f"</div>"
     )
+
+
+def render_next_cta(next_cmd: str, reason: str) -> str:
+    return (
+        f'<section class="next-cta" aria-label="Próximo comando">'
+        f'<p class="next-cta-kicker">Próximo comando</p>'
+        f'<code class="next-cta-cmd">{escape(next_cmd)}</code>'
+        f'<p class="next-cta-reason">{escape(reason)}</p>'
+        f"</section>"
+    )
+
+
+def _cta_reason(phases: dict[str, str], operacional_fields: list[dict] | None) -> str:
+    for p in PHASE_ORDER:
+        if phases.get(p) != "PASS":
+            if p == "operacional" and operacional_fields:
+                for f in operacional_fields:
+                    if f.get("state") in ("pending", "partial", "draft"):
+                        return f"{f['label']}: {f.get('hint', 'pendente')}"
+            label = PHASE_DISPLAY.get(p, {}).get("subtitle", p)
+            return f"Fase {label} incompleta"
+    return "Operacional ok — modelagem do domain-kit concluída"
+
+
+def render_flows_grade(flows: list[dict]) -> str:
+    if not flows:
+        return (
+            '<p class="home-section-hint">Nenhum fluxo no registry — '
+            "<code>/domain.flow 01</code>.</p>"
+        )
+    by_id = {f.get("id"): f for f in flows if f.get("id")}
+    rows = []
+    for f in flows:
+        fid = f.get("id", "?")
+        st = f.get("status", "draft")
+        deps = f.get("deps") or []
+        dep_notes: list[str] = []
+        blocked = False
+        for d in deps:
+            if d not in by_id:
+                dep_notes.append(f"missing {d}")
+                blocked = True
+            elif by_id[d].get("status") != "ready":
+                dep_notes.append(f"{d} not ready")
+                blocked = True
+        st_label = "blocked" if blocked and st != "ready" else st
+        dep_txt = ", ".join(dep_notes) if dep_notes else ("—" if not deps else ", ".join(deps))
+        path = str(f.get("path", "—"))
+        path_display = path
+        old_path = ""
+        rows.append(
+            f'<tr class="flow-row {escape(st_label)} {old_path}">'
+            f"<td><code>{escape(fid)}</code></td>"
+            f'<td><span class="flow-status {escape(st_label)}">{escape(st_label)}</span></td>'
+            f"<td>{escape(dep_txt)}</td>"
+            f'<td class="flow-path">{escape(path_display)}</td>'
+            f"</tr>"
+        )
+    return (
+        '<table class="flows-grade">'
+        "<thead><tr><th>ID</th><th>Status</th><th>Deps</th><th>Path</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table>"
+    )
+
+
+def render_operacional_checklist(operacional_fields: list[dict]) -> str:
+    if not operacional_fields:
+        return ""
+    items = []
+    for f in operacional_fields:
+        st = f.get("state", "pending")
+        mark = "✓" if st == "ready" else "·"
+        items.append(
+            f'<li class="op-check {escape(st)}">'
+            f'<span class="op-check-mark">{mark}</span> '
+            f'{escape(f["label"])} '
+            f'<span class="op-check-hint">{escape(f.get("hint", ""))}</span>'
+            f"</li>"
+        )
+    return f'<ul class="op-checklist">{"".join(items)}</ul>'
 
 
 def render_discover_home(
@@ -579,8 +804,9 @@ def render_discover_home(
     operacional_fields: list[dict] | None = None,
     product_card_html: str = "",
     active_change_html: str = "",
+    flows: list[dict] | None = None,
 ) -> str:
-    if not fields:
+    if not fields and not product_card_html:
         return '<div class="empty">Nenhum artefato configurado.</div>'
     state_label = {
         "ready": "Pronto",
@@ -602,546 +828,75 @@ def render_discover_home(
             f'<div class="discover-field-hint">{escape(f.get("hint", ""))}</div>'
             f"</div>"
         )
-    op_cards = ""
-    if operacional_fields:
-        for f in operacional_fields:
-            st = f["state"]
-            op_cards += (
-                f'<div class="discover-field-card">'
-                f'<div class="discover-field-head">'
-                f'<span class="discover-field-dot {escape(st)}"></span>'
-                f'<span class="discover-field-label">{escape(f["label"])}</span>'
-                f'<span class="field-status status-{escape(st)}">{escape(state_label.get(st, st))}</span>'
-                f"</div>"
-                f'<div class="field-bar"><div class="field-bar-fill {escape(st)}" style="width:{f["pct"]}%"></div></div>'
-                f'<div class="discover-field-hint">{escape(f.get("hint", ""))}</div>'
-                f"</div>"
-            )
-    op_section = op_cards or '<p class="home-section-hint">Fluxos de negócio, NFRs de produto e registry D-n.</p>'
     fill_cls = "ready" if total_pct >= 100 else "partial" if total_pct > 0 else "pending"
     current_label = (
         PIPELINE_STEPS[phase_index][1]
         if 0 <= phase_index < len(PIPELINE_STEPS)
-        else "—"
+        else "Concluído"
     )
-    phase_cards = "".join(
-        render_phase_card(p, phases.get(p, "?")) for p in PHASE_ORDER
+    current_key = (
+        PIPELINE_STEPS[phase_index][0]
+        if 0 <= phase_index < len(PIPELINE_STEPS)
+        else ""
     )
+    current_phase_html = ""
+    if current_key in PHASE_ORDER:
+        op_extra = ""
+        if current_key == "operacional":
+            op_extra = (
+                render_operacional_checklist(operacional_fields or [])
+                + render_flows_grade(flows or [])
+            )
+        current_phase_html = (
+            f'<div class="current-phase-panel">'
+            f"{render_phase_card(current_key, phases.get(current_key, '?'))}"
+            f"{op_extra}"
+            f"</div>"
+        )
+    other_cards = "".join(
+        render_phase_card(p, phases.get(p, "?"), compact=True)
+        for p in PHASE_ORDER
+        if p != current_key
+    )
+    reason = _cta_reason(phases, operacional_fields)
+    cta = render_next_cta(next_cmd, reason)
     pipeline = render_pipeline_bar(phase_index)
+    current_body = current_phase_html or (
+        '<p class="home-section-hint">Concluído / fora do escopo do domain-kit.</p>'
+    )
     return (
         f'<div class="discover-home">'
-        f'<h2 class="center-title">Domain-kit</h2>'
-        f'<p class="center-sub">Modelagem de problema e domínio — legível por produto e engenharia.</p>'
-        f"{product_card_html}"
         f"{active_change_html}"
+        f"{product_card_html}"
         f'<section class="home-section">'
         f'<h3 class="home-section-title">Pipeline</h3>'
         f"{pipeline}"
         f'<p class="home-section-hint">Etapa atual: <strong>{escape(current_label)}</strong> '
-        f"— design tático e integração técnica ficam no arch-kit.</p>"
+        f"— design tático e integração técnica ficam fora do escopo do domain-kit.</p>"
+        f"</section>"
+        f"{cta}"
+        f'<section class="home-section">'
+        f'<h3 class="home-section-title">Fase atual · {escape(current_label)}</h3>'
+        f"{current_body}"
         f"</section>"
         f'<section class="home-section">'
-        f'<h3 class="home-section-title">Fases</h3>'
-        f'<p class="home-section-hint"><strong>Pendente</strong> indica artefatos '
-        f"ainda incompletos na fase — não é erro de sistema.</p>"
-        f'<div class="gate-cards">{phase_cards}</div>'
+        f'<h3 class="home-section-title">Demais fases</h3>'
+        f'<div class="phase-cards phase-cards-compact">{other_cards}</div>'
         f"</section>"
-        f'<section class="home-section">'
-        f'<h3 class="home-section-title">Artefatos · Estratégico + Descoberta · {total_pct}%</h3>'
+        f'<details class="home-section home-details">'
+        f'<summary class="home-section-title">Artefatos · Estratégico + Descoberta · {total_pct}%</summary>'
         f'<div class="discover-summary">'
         f'<div class="discover-summary-label">Progresso</div>'
         f'<div class="field-bar field-bar-lg"><div class="field-bar-fill {fill_cls}" '
         f'style="width:{total_pct}%"></div></div>'
         f"</div>"
-        f'<div class="discover-legend">'
-        f'<span class="legend-ready">Pronto</span>'
-        f'<span class="legend-draft">Rascunho</span>'
-        f'<span class="legend-partial">Parcial</span>'
-        f'<span class="legend-pending">Pendente</span>'
-        f"</div>"
         f'<div class="discover-fields">{"".join(field_cards)}</div>'
-        f"</section>"
-        f'<section class="home-section home-section-last">'
-        f'<h3 class="home-section-title">Artefatos · Operacional</h3>'
-        f'<div class="discover-fields">{op_section}</div>'
-        f"</section>"
-        f'<div class="next-cmd">Próximo comando sugerido: <code>{escape(next_cmd)}</code></div>'
+        f"</details>"
         f"</div>"
     )
 
 
-def shared_styles() -> str:
-    return """
-:root {
-  --bg: #0f1419;
-  --surface: #1a2332;
-  --surface-2: #243044;
-  --border: #2d3a4f;
-  --text: #e8edf4;
-  --muted: #8b9cb3;
-  --accent: #f59e0b;
-  --accent-dim: rgba(245, 158, 11, 0.15);
-  --pass: #34d399;
-  --pass-bg: rgba(52, 211, 153, 0.12);
-  --fail: #f87171;
-  --fail-bg: rgba(248, 113, 113, 0.12);
-  --pending: #94a3b8;
-  --pending-bg: rgba(148, 163, 184, 0.12);
-  --draft: #60a5fa;
-  --draft-bg: rgba(96, 165, 250, 0.12);
-  --radius: 12px;
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  line-height: 1.55;
-  color-scheme: dark;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  min-height: 100vh;
-  background: var(--bg);
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(245, 158, 11, 0.08), transparent),
-    linear-gradient(180deg, var(--bg) 0%, #0a0e14 100%);
-  color: var(--text);
-}
-.shell { max-width: 1440px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
-.main-layout {
-  display: grid; grid-template-columns: minmax(240px, 280px) 1fr;
-  gap: 1.25rem; align-items: start; margin-top: 1.25rem;
-}
-@media (max-width: 900px) { .main-layout { grid-template-columns: 1fr; } }
-.sidebar {
-  position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto;
-  display: flex; flex-direction: column; gap: 0.75rem;
-}
-.sidebar-section {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 0.85rem; box-shadow: var(--shadow);
-}
-.sidebar-section h3 {
-  margin: 0 0 0.65rem; font-size: 0.72rem; text-transform: uppercase;
-  letter-spacing: 0.06em; color: var(--muted); font-weight: 600;
-}
-.sidebar-section-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
-  margin-bottom: 0.65rem;
-}
-.sidebar-section-head h3 { margin: 0; }
-.sidebar-toggle {
-  border: 1px solid var(--border); background: var(--surface-2); color: var(--muted);
-  font-size: 0.68rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 6px;
-  cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em;
-}
-.sidebar-toggle:hover { color: var(--text); border-color: var(--accent); }
-#discover-panel.collapsed { display: none; }
-#discover-show-btn { width: 100%; }
-.sidebar .gates { flex-direction: column; }
-.sidebar .gate { min-width: 0; }
-.sidebar .pipeline-track { flex-direction: column; align-items: stretch; padding: 0; }
-.sidebar .step { min-width: 0; text-align: left; padding: 0.45rem 0 0.45rem 1.25rem; }
-.sidebar .step-dot { margin: 0 0 0.35rem 0; }
-.sidebar .step:not(:last-child)::after {
-  top: 18px; left: 5px; width: 2px; height: calc(100% - 4px);
-}
-.work-area {
-  display: flex; flex-direction: column; min-width: 0; min-height: calc(100vh - 12rem);
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
-}
-.center-panel { display: none; flex: 1; min-height: 0; overflow: auto; padding: 1.5rem 1.75rem; }
-.center-panel.active { display: block; }
-.center-title { margin: 0; font-size: 1.5rem; font-weight: 650; letter-spacing: -0.02em; }
-.center-sub { color: var(--muted); font-size: 0.92rem; margin: 0.35rem 0 1.25rem; }
-.discover-home { max-width: 100%; }
-.home-section {
-  margin-bottom: 1.75rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);
-}
-.home-section-last { border-bottom: none; margin-bottom: 1rem; padding-bottom: 0; }
-.home-section-title { margin: 0 0 0.5rem; font-size: 1rem; font-weight: 650; color: var(--text); }
-.home-section-hint { font-size: 0.85rem; color: var(--muted); margin: 0 0 1rem; line-height: 1.5; }
-.home-section-hint strong { color: var(--text); font-weight: 600; }
-.pipeline-bar {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 0; overflow-x: auto;
-  margin-bottom: 0.65rem;
-}
-.pipe-step {
-  padding: 0.55rem 0.85rem; border-radius: 8px; border: 1px solid var(--border);
-  min-width: 92px; text-align: center; background: transparent;
-}
-.pipe-step.done { background: var(--surface-2); }
-.pipe-step.current { border-color: var(--accent); background: var(--accent-dim); }
-.pipe-step-label { font-size: 0.78rem; font-weight: 600; display: block; }
-.pipe-step-cmd {
-  font-size: 0.66rem; color: var(--muted); font-family: ui-monospace, monospace;
-  display: block; margin-top: 0.15rem;
-}
-.pipe-connector { width: 18px; height: 2px; background: var(--border); flex-shrink: 0; }
-.pipe-connector.done { background: var(--pass); }
-.gate-cards {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.85rem;
-}
-.gate-card {
-  padding: 1rem 1.1rem; border-radius: 10px; border: 1px solid var(--border);
-  background: var(--surface-2);
-}
-.gate-card.pass { border-top: 3px solid var(--pass); }
-.gate-card.fail { border-top: 3px solid var(--fail); }
-.gate-card.pending { border-top: 3px solid var(--pending); }
-.gate-card-head {
-  display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
-  margin-bottom: 0.35rem;
-}
-.gate-card-sub {
-  font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em;
-}
-.gate-card-badge {
-  font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
-  padding: 0.15rem 0.45rem; border-radius: 6px; flex-shrink: 0;
-}
-.gate-card.pass .gate-card-badge { background: var(--pass-bg); color: var(--pass); }
-.gate-card.fail .gate-card-badge { background: var(--fail-bg); color: var(--fail); }
-.gate-card.pending .gate-card-badge { background: var(--pending-bg); color: var(--pending); }
-.gate-card-title { margin: 0.25rem 0 0.5rem; font-size: 0.95rem; font-weight: 650; }
-.gate-card-desc { font-size: 0.84rem; color: var(--muted); margin: 0 0 0.75rem; line-height: 1.5; }
-.gate-card-meta {
-  display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.75rem; color: var(--muted);
-}
-.gate-card-meta code { color: var(--accent); font-size: 0.72rem; }
-.gate-card-meta strong { color: var(--text); font-weight: 600; }
-.discover-stats {
-  display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;
-}
-.discover-stat {
-  flex: 1; min-width: 88px; padding: 0.75rem 0.85rem; border-radius: 10px;
-  border: 1px solid var(--border); background: var(--surface-2); text-align: center;
-}
-.discover-stat-value { display: block; font-size: 1.25rem; font-weight: 700; }
-.discover-stat-label {
-  display: block; font-size: 0.68rem; text-transform: uppercase;
-  letter-spacing: 0.05em; color: var(--muted); margin-top: 0.2rem;
-}
-.discover-stat.ready .discover-stat-value { color: var(--pass); }
-.discover-stat.partial .discover-stat-value { color: var(--accent); }
-.discover-stat.pending .discover-stat-value { color: var(--pending); }
-.discover-fields {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 0.75rem; margin: 1rem 0 1.25rem;
-}
-.discover-field-card {
-  padding: 0.85rem 1rem; border-radius: 10px; border: 1px solid var(--border);
-  background: var(--surface-2);
-}
-.discover-field-head {
-  display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;
-}
-.discover-field-dot {
-  width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0;
-}
-.discover-field-dot.ready { background: var(--pass); }
-.discover-field-dot.draft { background: var(--draft); }
-.discover-field-dot.partial { background: var(--accent); }
-.discover-field-dot.pending { background: var(--border); }
-.discover-field-label { flex: 1; font-size: 0.84rem; font-weight: 600; min-width: 0; }
-.discover-field-hint { font-size: 0.72rem; color: var(--muted); margin-top: 0.35rem; }
-.nav-home {
-  display: block; width: 100%; text-align: left; padding: 0.75rem 0.85rem;
-  border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2);
-  color: var(--text); cursor: pointer; transition: border-color 0.12s, background 0.12s;
-}
-.nav-home:hover { border-color: var(--muted); }
-.nav-home.active { border-color: var(--accent); background: var(--accent-dim); }
-.nav-home-title { display: block; font-size: 0.88rem; font-weight: 650; }
-.nav-home-sub { display: block; font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; }
-.nav-tree { margin-bottom: 0.5rem; }
-.nav-tree summary {
-  cursor: pointer; font-size: 0.72rem; text-transform: uppercase;
-  letter-spacing: 0.06em; color: var(--muted); font-weight: 600;
-  list-style: none; display: flex; align-items: center; gap: 0.35rem;
-}
-.nav-tree summary::-webkit-details-marker { display: none; }
-.nav-tree summary::before { content: "▸"; font-size: 0.65rem; }
-.nav-tree[open] summary::before { content: "▾"; }
-.nav-file-list { list-style: none; margin: 0.45rem 0 0; padding: 0; }
-.nav-file-item {
-  display: flex; align-items: center; gap: 0.4rem; width: 100%;
-  padding: 0.4rem 0.5rem; border-radius: 6px; border: 1px solid transparent;
-  cursor: pointer; text-align: left; background: transparent; color: var(--text);
-  margin-bottom: 0.15rem;
-}
-.nav-file-item:hover { background: var(--surface-2); }
-.nav-file-item.selected {
-  background: var(--accent-dim); border-color: rgba(245, 158, 11, 0.35);
-}
-.nav-file-item.draft.selected { background: var(--draft-bg); border-color: rgba(96, 165, 250, 0.35); }
-.nav-file-path {
-  flex: 1; min-width: 0; font-size: 0.72rem; font-family: ui-monospace, monospace;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.nav-file-badge {
-  flex-shrink: 0; font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.04em; padding: 0.1rem 0.35rem; border-radius: 5px;
-  background: var(--draft-bg); color: var(--draft);
-}
-.nav-file-search {
-  width: 100%; padding: 0.4rem 0.55rem; border-radius: 6px; margin-bottom: 0.45rem;
-  border: 1px solid var(--border); background: var(--surface); color: var(--text);
-  font-size: 0.75rem;
-}
-.nav-file-search::placeholder { color: var(--muted); }
-.nav-file-search:focus { outline: none; border-color: var(--accent); }
-.nav-file-empty {
-  padding: 0.65rem; font-size: 0.75rem; color: var(--muted); text-align: center;
-  border: 1px dashed var(--border); border-radius: 6px;
-}
-.file-view-bar {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem;
-  padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border);
-}
-.btn-back {
-  padding: 0.4rem 0.75rem; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--surface-2); color: var(--text); font-size: 0.8rem; font-weight: 600;
-  cursor: pointer;
-}
-.btn-back:hover { border-color: var(--accent); color: var(--accent); }
-.file-breadcrumb { font-size: 0.8rem; color: var(--muted); }
-.file-breadcrumb strong { color: var(--text); font-weight: 600; }
-.file-breadcrumb code {
-  font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--accent);
-}
-.view-hint { font-size: 0.78rem; color: var(--muted); }
-.center-panel .preview-body { padding: 0; min-height: 360px; }
-.hero {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.5rem 1.75rem;
-  box-shadow: var(--shadow);
-  margin-bottom: 1.25rem;
-}
-.hero-top { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-.hero h1 { margin: 0; font-size: 1.75rem; font-weight: 650; letter-spacing: -0.02em; }
-.hero-sub { color: var(--muted); font-size: 0.95rem; margin: 0.35rem 0 0; }
-.hero-card-link { margin-top: 0.6rem; }
-.btn-product-card {
-  display: inline-block; padding: 0.45rem 0.9rem; border-radius: 8px;
-  border: 1px solid var(--accent); background: var(--accent-dim);
-  color: var(--accent); font-size: 0.85rem; font-weight: 600; text-decoration: none; cursor: pointer;
-}
-.btn-product-card:hover { filter: brightness(1.08); }
-.product-card-link { margin: 0.75rem 0 0.25rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-.product-card-hint { font-size: 0.82rem; color: var(--muted); }
-.active-change-banner {
-  margin: 0.75rem 0 0; padding: 0.75rem 1rem; border-radius: 8px;
-  border: 1px solid rgba(59, 130, 246, 0.45); background: rgba(59, 130, 246, 0.08);
-  font-size: 0.88rem; line-height: 1.45;
-}
-.active-change-phases { display: block; margin-top: 0.35rem; font-size: 0.8rem; color: var(--muted); }
-.active-change-cmd { margin: 0.4rem 0 0; font-size: 0.85rem; }
-.pills { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
-.pill {
-  font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
-  padding: 0.28rem 0.65rem; border-radius: 999px; border: 1px solid var(--border);
-  background: var(--surface-2);
-}
-.pill-accent { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-.next-cmd {
-  margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 8px;
-  background: var(--accent-dim); border: 1px solid rgba(245, 158, 11, 0.35);
-  font-size: 0.92rem;
-}
-.next-cmd code { color: var(--accent); font-weight: 600; }
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-@media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  box-shadow: var(--shadow);
-}
-.card h2 { margin: 0 0 1rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
-.gates { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-.gate {
-  flex: 1; min-width: 100px; text-align: center; padding: 0.85rem 0.5rem;
-  border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2);
-}
-.gate-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.gate-value { font-size: 1.1rem; font-weight: 700; margin-top: 0.25rem; }
-.gate.pass { border-color: var(--pass); background: var(--pass-bg); }
-.gate.pass .gate-value { color: var(--pass); }
-.gate.fail { border-color: var(--fail); background: var(--fail-bg); }
-.gate.fail .gate-value { color: var(--fail); }
-.gate.pending { border-color: var(--pending); background: var(--pending-bg); }
-.gate.pending .gate-value { color: var(--pending); }
-.pipeline-track {
-  display: flex; align-items: center; gap: 0; overflow-x: auto; padding: 0.25rem 0;
-}
-.step {
-  flex: 1; min-width: 90px; text-align: center; position: relative; padding: 0.5rem 0.25rem;
-}
-.step-dot {
-  width: 12px; height: 12px; border-radius: 50%; margin: 0 auto 0.4rem;
-  background: var(--border); border: 2px solid var(--surface-2);
-}
-.step.done .step-dot { background: var(--pass); border-color: var(--pass); box-shadow: 0 0 0 3px var(--pass-bg); }
-.step.current .step-dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
-.step-label { font-size: 0.72rem; color: var(--muted); font-weight: 600; }
-.step.current .step-label { color: var(--accent); }
-.step:not(:last-child)::after {
-  content: ""; position: absolute; top: 11px; left: calc(50% + 8px); width: calc(100% - 16px);
-  height: 2px; background: var(--border); z-index: 0;
-}
-.step.done:not(:last-child)::after { background: var(--pass); }
-.count {
-  display: inline-block; margin-left: 0.35rem; padding: 0.1rem 0.45rem; border-radius: 999px;
-  font-size: 0.72rem; background: var(--draft-bg); color: var(--draft);
-}
-.flow-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
-.flow-card {
-  padding: 1rem; border-radius: 10px; border: 1px solid var(--border);
-  background: var(--surface-2); transition: border-color 0.15s;
-}
-.flow-card:hover { border-color: var(--muted); }
-.flow-card.ready { border-left: 3px solid var(--pass); }
-.flow-card.draft, .flow-card.clarifying { border-left: 3px solid var(--accent); }
-.flow-id { font-weight: 700; font-size: 0.95rem; }
-.flow-title { color: var(--muted); font-size: 0.85rem; margin: 0.35rem 0; }
-.flow-meta { font-size: 0.75rem; color: var(--muted); }
-.empty {
-  text-align: center; padding: 2.5rem 1rem; color: var(--muted);
-  border: 1px dashed var(--border); border-radius: var(--radius);
-}
-.draft-list { list-style: none; padding: 0; margin: 0; }
-.draft-item {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem;
-  padding: 0.65rem 0.75rem; border: 1px solid var(--border); border-radius: 8px;
-  background: var(--surface-2); margin-bottom: 0.45rem; cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-.draft-item:hover, .draft-item.selected { border-color: var(--draft); background: var(--draft-bg); }
-.draft-target { font-family: ui-monospace, monospace; font-size: 0.75rem; word-break: break-all; }
-.draft-cmd { font-size: 0.68rem; color: var(--muted); }
-.badge-await { font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 6px; background: var(--draft-bg); color: var(--draft); font-weight: 600; }
-.art-list { list-style: none; padding: 0; margin: 0; max-height: 280px; overflow-y: auto; }
-.art-list li {
-  padding: 0.45rem 0.55rem; border-radius: 8px; cursor: pointer; font-size: 0.75rem;
-  font-family: ui-monospace, monospace; border: 1px solid transparent;
-}
-.art-list li:hover { background: var(--surface-2); }
-.art-list li.selected { background: var(--accent-dim); border-color: rgba(245, 158, 11, 0.4); color: var(--accent); }
-.preview-wrap {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--surface); overflow: hidden; min-height: 420px; flex: 1;
-  display: flex; flex-direction: column;
-}
-.preview-header {
-  padding: 0.65rem 1rem; background: var(--surface-2); border-bottom: 1px solid var(--border);
-  font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--muted);
-}
-.preview-body {
-  padding: 1.25rem; flex: 1; min-height: 360px;
-  overflow: auto; font-size: 0.92rem;
-}
-.preview-body > :first-child { margin-top: 0; }
-.preview-body pre, .preview-body .md-fallback {
-  white-space: pre-wrap; word-break: break-word; margin: 0.75rem 0;
-  font-family: ui-monospace, monospace; font-size: 0.82rem;
-}
-.preview-body h1 { font-size: 1.5rem; margin: 0 0 0.75rem; color: var(--text); }
-.preview-body h2 {
-  font-size: 1.2rem; margin: 1.25rem 0 0.5rem; color: var(--text);
-  border-bottom: 1px solid var(--border); padding-bottom: 0.25rem;
-}
-.preview-body h3, .preview-body h4 { margin: 1rem 0 0.4rem; color: var(--text); }
-.preview-body p { margin: 0.5rem 0; }
-.preview-body ul, .preview-body ol { margin: 0.5rem 0; padding-left: 1.5rem; }
-.preview-body li { margin: 0.25rem 0; }
-.preview-body li > p { margin: 0.25rem 0; }
-.preview-body blockquote {
-  margin: 0.75rem 0; padding: 0.5rem 1rem; border-left: 3px solid var(--accent);
-  background: var(--surface-2); color: var(--muted);
-}
-.preview-body code {
-  font-family: ui-monospace, monospace; font-size: 0.86em;
-  background: var(--surface-2); padding: 0.15rem 0.35rem; border-radius: 4px;
-}
-.preview-body pre {
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 8px; padding: 0.85rem 1rem; overflow-x: auto;
-}
-.preview-body pre code { background: none; padding: 0; font-size: 0.82rem; }
-.preview-body table { border-collapse: collapse; width: 100%; margin: 0.75rem 0; font-size: 0.88rem; }
-.preview-body th, .preview-body td { border: 1px solid var(--border); padding: 0.45rem 0.65rem; text-align: left; }
-.preview-body th { background: var(--surface-2); font-weight: 600; }
-.preview-body tr:nth-child(even) td { background: rgba(36, 48, 68, 0.35); }
-.preview-body a { color: var(--accent); }
-.preview-body hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
-.preview-body strong { color: var(--text); font-weight: 650; }
-.flow-list-compact { display: flex; flex-direction: column; gap: 0.4rem; max-height: 180px; overflow-y: auto; }
-.flow-chip {
-  padding: 0.45rem 0.55rem; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--surface-2); font-size: 0.72rem;
-}
-.flow-chip.ready { border-left: 3px solid var(--pass); }
-.flow-chip.draft, .flow-chip.clarifying { border-left: 3px solid var(--accent); }
-.flow-chip-id { font-weight: 700; }
-.flow-chip-title { color: var(--muted); margin-top: 0.15rem; }
-.help {
-  margin-top: 1.5rem; padding: 1rem 1.25rem; border-radius: var(--radius);
-  background: var(--surface-2); border: 1px solid var(--border); font-size: 0.88rem; color: var(--muted);
-}
-.help strong { color: var(--text); }
-.footer { margin-top: 2rem; text-align: center; font-size: 0.78rem; color: var(--muted); }
-.discover-summary { margin-bottom: 1.25rem; }
-.discover-summary-label { font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 0.4rem; }
-.field-bar-lg { height: 10px; margin-top: 0.25rem; }
-.field-row {
-  display: grid; grid-template-columns: minmax(120px, 150px) 1fr minmax(72px, 88px);
-  gap: 0.5rem 0.75rem; align-items: center; margin-bottom: 0.85rem;
-}
-.field-label { font-size: 0.84rem; font-weight: 600; }
-.field-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
-.field-bar-fill { height: 100%; border-radius: 4px; min-width: 2px; }
-.field-bar-fill.ready { background: var(--pass); }
-.field-bar-fill.draft { background: var(--draft); }
-.field-bar-fill.partial { background: var(--accent); }
-.field-bar-fill.pending { background: var(--border); }
-.field-status { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; text-align: right; }
-.status-ready { color: var(--pass); }
-.status-draft { color: var(--draft); }
-.status-partial { color: var(--accent); }
-.status-pending { color: var(--pending); }
-.field-hint { grid-column: 1 / -1; font-size: 0.72rem; color: var(--muted); margin: -0.35rem 0 0; padding-left: 0.15rem; }
-.discover-legend { display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.68rem; color: var(--muted); margin-bottom: 0.75rem; }
-.sidebar .field-row {
-  grid-template-columns: 1fr; gap: 0.25rem; margin-bottom: 0.65rem;
-}
-.sidebar .field-status { text-align: left; }
-.sidebar .field-hint { margin-top: 0; }
-.sidebar .discover-summary { margin-bottom: 0.85rem; }
-.discover-legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 0.35rem; vertical-align: middle; }
-.legend-ready::before { background: var(--pass); }
-.legend-draft::before { background: var(--draft); }
-.legend-partial::before { background: var(--accent); }
-.legend-pending::before { background: var(--border); }
-.plantuml-diagram { margin: 1rem 0; overflow-x: auto; text-align: center; }
-.plantuml-diagram svg, .plantuml-diagram img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
-.plantuml-loading { color: var(--muted); font-size: 0.85rem; font-style: italic; padding: 0.5rem 0; }
-.plantuml-hint {
-  margin: 0.5rem 0 1rem; padding: 0.75rem 1rem; border-radius: 8px;
-  border: 1px dashed var(--border); background: var(--surface-2);
-  color: var(--muted); font-size: 0.85rem;
-}
-.plantuml-hint code { color: var(--accent); font-size: 0.82rem; }
-.mermaid-diagram { margin: 1rem 0; overflow-x: auto; text-align: center; }
-.mermaid-diagram svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
-.mermaid-hint {
-  margin: 0.5rem 0 1rem; padding: 0.75rem 1rem; border-radius: 8px;
-  border: 1px dashed var(--border); background: var(--surface-2);
-  color: var(--muted); font-size: 0.85rem;
-}
-"""
+
 
 
 def _file_menu_parts(rel: str) -> tuple[str, str]:
@@ -1192,24 +947,399 @@ def _render_draft_item(target: str, hint: str, badge: str) -> str:
     )
 
 
-def render_shell(title: str, body: str, extra_script: str = "", extra_head: str = "") -> str:
-    return f"""<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>{escape(title)}</title>
-<style>{shared_styles()}</style>
-{extra_head}
-</head>
-<body>
-<div class="shell">
-{body}
-<p class="footer">Gerado {escape(datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC"))} · read-only · domain-kit</p>
-</div>
-<script>{extra_script}</script>
-</body>
-</html>"""
+
+def _artifact_phase(rel: str) -> str:
+    r = rel.replace("\\", "/")
+    if (
+        r.startswith("01-product/00-scan/")
+        or r in ("sources.yml", "product-README.md", "CHANGELOG.md", "README.md")
+    ):
+        return "evidencias"
+    if "01-vision/" in r or r.startswith("01-product/02-domain/"):
+        return "estrategico"
+    if "03-discovery/" in r:
+        return "descoberta"
+    if (
+        "04-operacional/" in r
+        or r.startswith("05-decisoes/")
+        or r == "flows-registry.yml"
+    ):
+        return "operacional"
+    if r.startswith("arch/"):
+        return "fora"
+    return "outros"
+
+
+def render_journey_track(phases: dict[str, str], phase_idx: int) -> str:
+    cards: list[str] = []
+    for i, (pid, label, _cmd) in enumerate(PIPELINE_STEPS):
+        st = phases.get(pid, "?")
+        if st == "PASS":
+            cls, badge = "done", "pass"
+        elif i == phase_idx:
+            cls, badge = "current", "agora"
+        else:
+            cls, badge = "pending", "pendente"
+        meta = PHASE_DISPLAY.get(pid, {})
+        cmd = str(meta.get("command", "—"))
+        cards.append(
+            f'<button type="button" class="phase {cls}" data-phase="{escape(pid)}">'
+            f'<span class="phase-status">{escape(badge)}</span>'
+            f'<span class="phase-num">{i + 1}</span>'
+            f'<span class="phase-title">{escape(label)}</span>'
+            f'<span class="phase-cmd">{escape(cmd)}</span>'
+            f"</button>"
+        )
+    return "".join(cards)
+
+
+def _now_title_and_copy(
+    next_cmd: str,
+    phases: dict[str, str],
+    operacional_fields: list[dict],
+) -> tuple[str, str]:
+    reason = _cta_reason(phases, operacional_fields)
+    cmd = next_cmd.strip()
+    if "flow" in cmd:
+        return "Fechar o próximo fluxo operacional", (
+            f"{escape(reason)}. Documente o fluxo e atualize o "
+            "<code>flows-registry.yml</code>."
+        )
+    if "model" in cmd and "finalize" in cmd:
+        return "Fechar a fase Operacional", (
+            "NFRs e fluxos precisam fechar o ciclo do domain-kit. "
+            "Depois disso, design tático fica fora do escopo."
+        )
+    if "model" in cmd:
+        return "Modelar requisitos de produto", escape(reason)
+    if "decision" in cmd:
+        return "Registrar decisão de produto", (
+            f"{escape(reason)}. Use <code>/domain.decision</code> para D-n."
+        )
+    if "discover" in cmd:
+        return "Avançar a descoberta de domínio", escape(reason)
+    if "scan" in cmd:
+        return "Atualizar evidências", (
+            "Fonte ou enunciado mudou — rode o scan sem reabrir lacunas de negócio."
+        )
+    if "init" in cmd:
+        return "Inicializar o produto", (
+            "Bootstrap + primeiro scan para indexar evidências."
+        )
+    if "change" in cmd:
+        return "Sessão evolutiva", escape(reason)
+    if phases.get("operacional") == "PASS":
+        return "Ciclo domain-kit concluído", (
+            "Todas as fases passaram. Próximos passos técnicos ficam fora do escopo."
+        )
+    return "Próximo passo do ciclo", escape(reason)
+
+
+def render_now_panel(
+    next_cmd: str,
+    phases: dict[str, str],
+    discover_fields: list[dict],
+    operacional_fields: list[dict],
+    phase_idx: int,
+) -> str:
+    title, copy = _now_title_and_copy(next_cmd, phases, operacional_fields)
+    reason = _cta_reason(phases, operacional_fields)
+    current_label = (
+        PIPELINE_STEPS[phase_idx][1]
+        if 0 <= phase_idx < len(PIPELINE_STEPS)
+        else "Concluído"
+    )
+    checks: list[str] = []
+    for f in discover_fields:
+        st = f.get("state", "pending")
+        done = st == "ready"
+        mark = "✓" if done else "○"
+        cls = "done" if done else ""
+        tag = "ok" if done else ("rascunho" if st == "draft" else "todo")
+        checks.append(
+            f'<li class="check {cls}">'
+            f'<span class="mark">{mark}</span>'
+            f'<span>{escape(f["label"])} '
+            f'<span class="hint">— {escape(f.get("hint", ""))}</span></span>'
+            f'<span class="tag">{escape(tag)}</span>'
+            f"</li>"
+        )
+    for f in operacional_fields:
+        st = f.get("state", "pending")
+        done = st == "ready"
+        mark = "✓" if done else "○"
+        cls = "done" if done else ""
+        tag = "ok" if done else ("parcial" if st == "partial" else "todo")
+        checks.append(
+            f'<li class="check {cls}">'
+            f'<span class="mark">{mark}</span>'
+            f'<span>{escape(f["label"])} '
+            f'<span class="hint">— {escape(f.get("hint", ""))}</span></span>'
+            f'<span class="tag">{escape(tag)}</span>'
+            f"</li>"
+        )
+    checklist = (
+        f'<ul class="checklist">{"".join(checks)}</ul>'
+        if checks
+        else '<p class="empty">Sem checklist de progresso.</p>'
+    )
+    return (
+        f'<p class="panel-label">Agora · {escape(current_label)}</p>'
+        f'<h2 class="now-title">{escape(title)}</h2>'
+        f'<p class="now-copy">{copy}</p>'
+        f'<div class="cta">'
+        f"<div>"
+        f'<div class="cta-cmd">{escape(next_cmd)}</div>'
+        f'<div class="cta-why">{escape(reason)}</div>'
+        f"</div>"
+        f'<div class="cta-actions">'
+        f'<button type="button" class="btn primary" id="btn-copy-cmd" '
+        f'data-cmd="{escape(next_cmd)}">Copiar comando</button>'
+        f'<button type="button" class="btn ghost" data-tab="fluxos">Ver fluxos</button>'
+        f"</div>"
+        f"</div>"
+        f"{checklist}"
+    )
+
+
+def render_loops_panel(status: dict, product: str) -> str:
+    ac = status.get("activeChange")
+    loops = [
+        (
+            "Fonte mudou",
+            "Enunciado / repo atualizado — não reabre lacunas de negócio.",
+            f"/domain.scan {product}",
+            False,
+        ),
+        (
+            "Evolução (E-n)",
+            "Abre sessão, trabalha fases impactadas e fecha com --close.",
+            "/domain.change --kind evolution …",
+            False,
+        ),
+        (
+            "Problema (P-n)",
+            "Registra problema aberto e conduz ajuste de UL/BC/fluxo.",
+            "/domain.change --kind problem-new …",
+            False,
+        ),
+    ]
+    parts: list[str] = []
+    for title, copy, cmd, active in loops:
+        cls = "active" if active else "idle"
+        parts.append(
+            f'<div class="loop {cls}">'
+            f'<h3 class="loop-title">{escape(title)}</h3>'
+            f'<p class="loop-copy">{escape(copy)}</p>'
+            f"<code>{escape(cmd)}</code>"
+            f"</div>"
+        )
+    if ac and isinstance(ac, dict):
+        kind = ac.get("kind", "—")
+        cid = ac.get("id", "—")
+        title = ac.get("title", "")
+        cmd = ac.get("suggestedCommand", "/domain.change --close")
+        title_bit = f" — {escape(str(title))}" if title else ""
+        parts.append(
+            f'<div class="loop active active-session">'
+            f'<h3 class="loop-title">Sessão ativa</h3>'
+            f'<p class="loop-copy">{escape(str(kind))} · '
+            f"<code>{escape(str(cid))}</code>{title_bit}</p>"
+            f"<code>{escape(str(cmd))}</code>"
+            f'<p class="loop-copy" style="margin-top:0.45rem">Encerrar: '
+            f"<code>/domain.change --close</code></p>"
+            f"</div>"
+        )
+    else:
+        parts.append(
+            '<div class="loop active-session">'
+            '<h3 class="loop-title">Sessão ativa</h3>'
+            '<p class="loop-copy">Nenhuma. Use <code>/domain.change</code> '
+            "para registrar E-n ou P-n.</p>"
+            "</div>"
+        )
+    return "".join(parts)
+
+
+def _render_file_button(rel: str, *, draft: bool = False, badge: str = "ok") -> str:
+    badge_cls = "draft" if draft or badge in ("aguardando OK", "rascunho") else (
+        "miss" if badge in ("pendente", "missing") else ""
+    )
+    data = f'data-draft-key="{escape(rel)}"' if draft else f'data-doc="{escape(rel)}"'
+    return (
+        f'<li><button type="button" class="file-item" {data} '
+        f'role="button" tabindex="0">'
+        f'<span class="file-name">{escape(rel)}</span>'
+        f'<span class="file-badge {badge_cls}">{escape(badge)}</span>'
+        f"</button></li>"
+    )
+
+
+def render_artifacts_by_phase(
+    artifacts: list[tuple[str, Path]],
+    phases: dict[str, str],
+) -> str:
+    buckets: dict[str, list[str]] = {p: [] for p in PHASE_ORDER}
+    buckets["fora"] = []
+    buckets["outros"] = []
+    for rel, _ in artifacts:
+        buckets.setdefault(_artifact_phase(rel), []).append(rel)
+
+    blocks: list[str] = []
+    labels = {
+        "evidencias": "Evidências",
+        "estrategico": "Estratégico",
+        "descoberta": "Descoberta",
+        "operacional": "Operacional",
+        "fora": "Fora do escopo",
+        "outros": "Outros",
+    }
+    for key in [*PHASE_ORDER, "fora", "outros"]:
+        items = buckets.get(key) or []
+        if not items and key in ("fora", "outros"):
+            continue
+        st = phases.get(key, "")
+        if key in PHASE_ORDER:
+            if st == "PASS":
+                status_html = '<span class="status ok">pass</span>'
+            elif st == "FAIL":
+                status_html = '<span class="status current">agora</span>'
+            else:
+                status_html = '<span class="status pending">pendente</span>'
+        else:
+            status_html = '<span class="status pending">ref</span>'
+        if items:
+            lis = "".join(_render_file_button(rel) for rel in items)
+        else:
+            lis = '<li class="nav-file-empty">Nenhum artefato nesta fase.</li>'
+        blocks.append(
+            f'<div class="phase-block" data-phase-block="{escape(key)}">'
+            f'<div class="phase-block-head">'
+            f"<h3>{escape(labels.get(key, key))}</h3>"
+            f"{status_html}"
+            f"</div>"
+            f'<ul class="file-list">{lis}</ul>'
+            f"</div>"
+        )
+    return "".join(blocks) or '<div class="empty">Nenhum artefato promovido.</div>'
+
+
+def render_flows_tab(flows: list[dict]) -> str:
+    if not flows:
+        return (
+            '<div class="empty">Nenhum fluxo no registry — '
+            "<code>/domain.flow 01</code>.</div>"
+        )
+    cards: list[str] = []
+    for f in flows:
+        st = f.get("status", "draft")
+        st_cls = "ready" if st == "ready" else "draft" if st in ("draft", "clarifying") else "todo"
+        cards.append(
+            f'<div class="flow">'
+            f'<div class="flow-id">{escape(f.get("id", "?"))}</div>'
+            f"<div>"
+            f'<div class="flow-title">{escape(f.get("title", "Sem título"))}</div>'
+            f'<div class="flow-meta">{escape(f.get("path", "—"))}</div>'
+            f"</div>"
+            f'<span class="flow-st {st_cls}">{escape(st)}</span>'
+            f"</div>"
+        )
+    return f'<div class="flows">{"".join(cards)}</div>'
+
+
+def render_drafts_tab(
+    pending: list[dict],
+    draft_files: list[tuple[str, Path]],
+) -> str:
+    items: list[str] = []
+    if pending:
+        for entry in pending:
+            target = entry.get("targetPath", "?")
+            items.append(_render_file_button(target, draft=True, badge="aguardando OK"))
+    elif draft_files:
+        for rel, _ in draft_files:
+            items.append(_render_file_button(rel, draft=True, badge="rascunho"))
+    if not items:
+        return (
+            '<div class="empty">Nenhum rascunho pendente.</div>'
+            '<p style="margin:0.85rem 0 0;font-size:0.82rem;color:var(--muted)">'
+            "Plan mode: rascunhos não contam nas fases até promote.</p>"
+        )
+    return (
+        f'<ul class="file-list">{"".join(items)}</ul>'
+        '<p style="margin:0.85rem 0 0;font-size:0.82rem;color:var(--muted)">'
+        "Plan mode: rascunhos não contam nas fases até promote.</p>"
+    )
+
+
+def render_command_map(phases: dict[str, str], next_cmd: str) -> str:
+    steps = [
+        ("/domain.install", "Hub zerado", "install"),
+        ("/domain.init", "Bootstrap + 1º scan", "evidencias"),
+        ("/domain.discover", "Estratégico + Descoberta", "descoberta"),
+        ("/domain.flow", "Fluxos operacionais", "operacional"),
+        ("/domain.decision", "Decisões D-n", "operacional"),
+        ("/domain.model --finalize", "Fechar Operacional", "operacional"),
+        ("/domain.scan", "Fonte externa mudou", "loop"),
+        ("/domain.change", "E-n / P-n", "loop"),
+    ]
+    rows: list[str] = []
+    for cmd, label, kind in steps:
+        if kind == "install":
+            done = True
+            tag = "hub"
+            mark = "✓"
+        elif kind == "loop":
+            done = False
+            tag = "loop"
+            mark = "○"
+        else:
+            # mark done if prior phases passed enough
+            if kind == "evidencias":
+                done = phases.get("evidencias") == "PASS"
+            elif kind == "descoberta":
+                done = (
+                    phases.get("estrategico") == "PASS"
+                    and phases.get("descoberta") == "PASS"
+                )
+            else:
+                done = phases.get("operacional") == "PASS"
+            tag = "feito" if done else ("agora" if cmd.split()[0] in next_cmd else "depois")
+            mark = "✓" if done else ("→" if tag == "agora" else "○")
+        cls = "done" if done else ""
+        rows.append(
+            f'<li class="check {cls}">'
+            f'<span class="mark">{mark}</span>'
+            f"<span><code>{escape(cmd)}</code> · {escape(label)}</span>"
+            f'<span class="tag">{escape(tag)}</span>'
+            f"</li>"
+        )
+    return f'<ul class="checklist">{"".join(rows)}</ul>'
+
+
+
+def render_shell(
+    title: str,
+    body: str,
+    *,
+    depth: int = 0,
+    extra_head: str = "",
+    bootstrap: str = "",
+) -> str:
+    """Assemble HTML from scripts/dashboard/shell.html + linked CSS/JS."""
+    return fill_template(
+        load_dashboard_template("shell.html"),
+        {
+            "TITLE": escape(title),
+            "ASSET_PREFIX": dashboard_asset_prefix(depth),
+            "EXTRA_HEAD": extra_head,
+            "BODY": body,
+            "GENERATED_AT": escape(
+                datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+            ),
+            "BOOTSTRAP": bootstrap,
+        },
+    )
 
 
 def build_product_dashboard(hub: Path, product: str) -> str:
@@ -1248,48 +1378,20 @@ def build_product_dashboard(hub: Path, product: str) -> str:
     discover_fields = compute_discover_fields(product_dir, status)
     operacional_fields = compute_operacional_fields(product_dir, status)
     _, discover_total = render_discover_progress(discover_fields)
-    product_card_html = render_product_card_link(product_dir)
-    active_change_html = render_active_change_banner(status)
-    discover_home_html = render_discover_home(
-        discover_fields,
-        discover_total,
-        str(next_cmd),
-        phases,
-        p_idx,
-        operacional_fields,
-        product_card_html,
-        active_change_html,
-    )
-
-    flow_chips = []
-    for f in flows:
-        st = f.get("status", "draft")
-        flow_chips.append(
-            f'<div class="flow-chip {escape(st)}">'
-            f'<div class="flow-chip-id">{escape(f.get("id", "?"))}</div>'
-            f'<div class="flow-chip-title">{escape(f.get("title", "Sem título"))}</div>'
-            f"</div>"
-        )
-    flow_sidebar_html = "".join(flow_chips) or '<div class="empty" style="padding:1rem;font-size:0.8rem">Nenhum fluxo.</div>'
 
     draft_count = len(pending) or len(draft_files)
-
-    draft_items = []
-    if pending:
-        for entry in pending:
-            target = entry.get("targetPath", "?")
-            draft_items.append(_render_nav_draft_item(target, "aguardando OK"))
-    elif draft_files:
-        for rel, _ in draft_files:
-            draft_items.append(_render_nav_draft_item(rel, "rascunho"))
-    draft_list_html = "".join(draft_items)
-    if not draft_list_html:
-        draft_list_html = '<li class="nav-file-empty">Nenhum rascunho pendente.</li>'
-
     art_count = len(artifacts)
-    art_items = "".join(_render_nav_artifact_item(rel) for rel, _ in artifacts) or (
-        '<li class="nav-file-empty">Nenhum artefato promovido ainda.</li>'
-    )
+
+    readme = product_dir / "product-README.md"
+    product_title = product
+    product_sub = "Jornada negócio → domínio. Pipeline termina em Operacional."
+    if readme.is_file():
+        fields = _extract_product_readme_fields(readme.read_text(encoding="utf-8"))
+        product_title = fields.get("title") or product
+        if fields.get("o_que_e"):
+            product_sub = fields["o_que_e"]
+
+    scan_chip = "ok" if scan in ("done", "ready", "complete", "PASS") else ""
 
     docs_payload: dict[str, str] = {}
     for rel, path in artifacts:
@@ -1299,7 +1401,6 @@ def build_product_dashboard(hub: Path, product: str) -> str:
     for rel, path in draft_files:
         drafts_payload[rel] = file_to_preview_text(path)
 
-    # map targetPath -> draftPath content for pending entries
     for entry in pending:
         target = entry.get("targetPath", "")
         draft_path = entry.get("draftPath", "").lstrip("./")
@@ -1307,397 +1408,46 @@ def build_product_dashboard(hub: Path, product: str) -> str:
         if target and full and full.is_file():
             drafts_payload[target] = file_to_preview_text(full)
 
-    script = f"""
-const DOCS = {json.dumps(docs_payload)};
-const DRAFTS = {json.dumps(drafts_payload)};
-const PLANTUML_SERVER = {json.dumps(plantuml_server)};
+    bootstrap = (
+        "<script>\n"
+        f"window.__DK_DOCS__ = {json.dumps(docs_payload)};\n"
+        f"window.__DK_DRAFTS__ = {json.dumps(drafts_payload)};\n"
+        f"window.__DK_PLANTUML_SERVER__ = {json.dumps(plantuml_server)};\n"
+        "</script>"
+    )
 
-function escapeHtml(text) {{
-  const el = document.createElement('div');
-  el.textContent = text;
-  return el.innerHTML;
-}}
-
-function renderMarkdown(text, path) {{
-  if (!text) return '<p class="empty">Sem conteúdo.</p>';
-  const ext = (path || '').split('.').pop().toLowerCase();
-  if (ext === 'md' && window.marked) {{
-    return marked.parse(text, {{ gfm: true, breaks: false }});
-  }}
-  if (ext === 'md') {{
-    return `<pre class="md-fallback">${{escapeHtml(text)}}</pre>`;
-  }}
-  return `<pre class="md-fallback"><code>${{escapeHtml(text)}}</code></pre>`;
-}}
-
-function normalizePlantUmlSource(source) {{
-  const trimmed = (source || '').trim();
-  if (!trimmed) return '';
-  if (/@startuml/i.test(trimmed)) return trimmed;
-  return '@startuml\\n' + trimmed + '\\n@enduml';
-}}
-
-function encode6bit(b) {{
-  if (b < 10) return String.fromCharCode(48 + b);
-  b -= 10;
-  if (b < 26) return String.fromCharCode(65 + b);
-  b -= 26;
-  if (b < 26) return String.fromCharCode(97 + b);
-  b -= 26;
-  if (b === 0) return '-';
-  if (b === 1) return '_';
-  return '?';
-}}
-
-function append3bytes(b1, b2, b3) {{
-  const c1 = b1 >> 2;
-  const c2 = ((b1 & 0x3) << 4) | (b2 >> 4);
-  const c3 = ((b2 & 0xF) << 2) | (b3 >> 6);
-  const c4 = b3 & 0x3F;
-  return (
-    encode6bit(c1 & 0x3F) + encode6bit(c2 & 0x3F) +
-    encode6bit(c3 & 0x3F) + encode6bit(c4 & 0x3F)
-  );
-}}
-
-function encodePlantUml64(data) {{
-  let r = '';
-  for (let i = 0; i < data.length; i += 3) {{
-    if (i + 2 === data.length) {{
-      r += append3bytes(data.charCodeAt(i), data.charCodeAt(i + 1), 0);
-    }} else if (i + 1 === data.length) {{
-      r += append3bytes(data.charCodeAt(i), 0, 0);
-    }} else {{
-      r += append3bytes(data.charCodeAt(i), data.charCodeAt(i + 1), data.charCodeAt(i + 2));
-    }}
-  }}
-  return r;
-}}
-
-async function deflateRaw(text) {{
-  const data = new TextEncoder().encode(text);
-  if (typeof CompressionStream !== 'undefined') {{
-    const stream = new Blob([data]).stream().pipeThrough(new CompressionStream('deflate-raw'));
-    const buf = await new Response(stream).arrayBuffer();
-    return String.fromCharCode(...new Uint8Array(buf));
-  }}
-  return null;
-}}
-
-async function plantumlSvgUrl(source) {{
-  const normalized = normalizePlantUmlSource(source);
-  const deflated = await deflateRaw(normalized);
-  if (!deflated) return null;
-  return PLANTUML_SERVER + '/svg/' + encodePlantUml64(deflated);
-}}
-
-function isPlantUmlBlock(codeEl) {{
-  const cls = (codeEl.className || '').toLowerCase();
-  if (/language-(plantuml|uml|puml)\\b/.test(cls)) return true;
-  return /@startuml/i.test(codeEl.textContent || '');
-}}
-
-function findPlantUmlBlocks(container) {{
-  const blocks = [];
-  container.querySelectorAll('pre code').forEach(code => {{
-    if (isPlantUmlBlock(code)) {{
-      const pre = code.closest('pre');
-      if (pre && !pre.dataset.plantumlDone) blocks.push(code);
-    }}
-  }});
-  return blocks;
-}}
-
-function showPlantUmlHint(pre) {{
-  if (pre.dataset.plantumlHint) return;
-  pre.dataset.plantumlHint = '1';
-  const hint = document.createElement('div');
-  hint.className = 'plantuml-hint';
-  hint.innerHTML = '<p><em>Diagrama PlantUML não renderizado.</em> Suba o servidor local: '
-    + '<code>.domain/scripts/start_plantuml_server.sh</code> '
-    + '(porta 8765). Ver <code>domain-kit/references/plantuml-dashboard.md</code>.</p>';
-  pre.insertAdjacentElement('afterend', hint);
-}}
-
-async function renderPlantUmlBlock(codeEl) {{
-  const pre = codeEl.closest('pre');
-  if (!pre || pre.dataset.plantumlDone) return;
-  const source = normalizePlantUmlSource(codeEl.textContent);
-
-  async function renderViaImg() {{
-    const url = await plantumlSvgUrl(source);
-    if (!url) return null;
-    return new Promise(resolve => {{
-      const img = document.createElement('img');
-      img.alt = 'Diagrama PlantUML';
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = url;
-    }});
-  }}
-
-  async function renderViaPost() {{
-    try {{
-      const resp = await fetch(PLANTUML_SERVER + '/svg', {{
-        method: 'POST',
-        headers: {{ 'Content-Type': 'text/plain' }},
-        body: source,
-      }});
-      if (!resp.ok) return null;
-      const svg = await resp.text();
-      if (!svg.includes('<svg')) return null;
-      const wrap = document.createElement('div');
-      wrap.innerHTML = svg;
-      return wrap.firstElementChild || wrap;
-    }} catch (_) {{
-      return null;
-    }}
-  }}
-
-  const rendered = await renderViaImg() || await renderViaPost();
-  if (rendered) {{
-    const wrap = document.createElement('div');
-    wrap.className = 'plantuml-diagram';
-    wrap.appendChild(rendered);
-    pre.replaceWith(wrap);
-    return;
-  }}
-
-  pre.dataset.plantumlDone = 'failed';
-  showPlantUmlHint(pre);
-}}
-
-async function renderPlantUmlIn(container) {{
-  const blocks = findPlantUmlBlocks(container);
-  for (const block of blocks) {{
-    await renderPlantUmlBlock(block);
-  }}
-}}
-
-let mermaidReady = false;
-function ensureMermaid() {{
-  if (mermaidReady || !window.mermaid) return false;
-  mermaid.initialize({{
-    startOnLoad: false,
-    theme: 'dark',
-    securityLevel: 'loose',
-    flowchart: {{ useMaxWidth: true, htmlLabels: true }},
-  }});
-  mermaidReady = true;
-  return true;
-}}
-
-function findMermaidBlocks(container) {{
-  const blocks = [];
-  container.querySelectorAll('pre code').forEach(code => {{
-    const cls = (code.className || '').toLowerCase();
-    if (!/language-mermaid\\b/.test(cls)) return;
-    const pre = code.closest('pre');
-    if (pre && !pre.dataset.mermaidDone) blocks.push(code);
-  }});
-  return blocks;
-}}
-
-async function renderMermaidBlock(codeEl) {{
-  const pre = codeEl.closest('pre');
-  if (!pre || pre.dataset.mermaidDone) return;
-  if (!ensureMermaid()) {{
-    pre.dataset.mermaidDone = 'failed';
-    return;
-  }}
-  const source = (codeEl.textContent || '').trim();
-  const id = 'mermaid-' + Math.random().toString(36).slice(2, 10);
-  try {{
-    const result = await mermaid.render(id, source);
-    const wrap = document.createElement('div');
-    wrap.className = 'mermaid-diagram';
-    wrap.innerHTML = result.svg;
-    pre.replaceWith(wrap);
-  }} catch (err) {{
-    pre.dataset.mermaidDone = 'failed';
-    const hint = document.createElement('div');
-    hint.className = 'mermaid-hint';
-    hint.innerHTML = '<p><em>Diagrama Mermaid não renderizado.</em> '
-      + escapeHtml(String(err.message || err)) + '</p>';
-    pre.insertAdjacentElement('afterend', hint);
-  }}
-}}
-
-async function renderMermaidIn(container) {{
-  const blocks = findMermaidBlocks(container);
-  for (const block of blocks) {{
-    await renderMermaidBlock(block);
-  }}
-}}
-
-async function setPreview(key, text) {{
-  const el = document.getElementById('doc-preview');
-  el.innerHTML = renderMarkdown(text, key);
-  await renderMermaidIn(el);
-  await renderPlantUmlIn(el);
-}}
-
-function setViewHint(text) {{
-  const hint = document.getElementById('view-hint');
-  if (hint) hint.textContent = text;
-}}
-
-function showDiscover() {{
-  document.getElementById('center-discover')?.classList.add('active');
-  document.getElementById('center-file')?.classList.remove('active');
-  document.getElementById('nav-discover')?.classList.add('active');
-  document.querySelectorAll('.nav-file-item').forEach(x => x.classList.remove('selected'));
-  setViewHint('visão: menu Discover');
-  try {{ localStorage.setItem('dk-center-view', 'discover'); }} catch (_) {{}}
-}}
-
-async function showFile(key, text, isDraft) {{
-  document.getElementById('center-discover')?.classList.remove('active');
-  document.getElementById('center-file')?.classList.add('active');
-  document.getElementById('nav-discover')?.classList.remove('active');
-  document.querySelectorAll('.nav-file-item').forEach(x => {{
-    const itemKey = x.dataset.doc || x.dataset.draftKey;
-    x.classList.toggle('selected', itemKey === key);
-  }});
-  const kind = document.getElementById('file-kind');
-  const pathEl = document.getElementById('file-path');
-  if (kind) kind.textContent = isDraft ? 'Rascunho' : 'Artefato';
-  if (pathEl) pathEl.textContent = key || '—';
-  setViewHint('visão: ' + (key || 'arquivo'));
-  await setPreview(key, text);
-  try {{ localStorage.setItem('dk-center-view', 'file:' + key); }} catch (_) {{}}
-}}
-
-function filterNavFiles(query) {{
-  const q = (query || '').trim().toLowerCase();
-  document.querySelectorAll('.nav-file-item').forEach(item => {{
-    const hay = (item.dataset.doc || item.dataset.draftKey || item.textContent || '').toLowerCase();
-    item.hidden = Boolean(q) && !hay.includes(q);
-  }});
-}}
-
-document.getElementById('nav-discover')?.addEventListener('click', () => showDiscover());
-document.getElementById('back-discover')?.addEventListener('click', () => showDiscover());
-
-document.getElementById('nav-file-filter')?.addEventListener('input', (e) => {{
-  filterNavFiles(e.target.value);
-}});
-
-document.querySelectorAll('.nav-file-item[data-doc]').forEach(li => {{
-  const open = () => {{
-    const k = li.dataset.doc;
-    showFile(k, DOCS[k] || '', false);
-  }};
-  li.addEventListener('click', open);
-  li.addEventListener('keydown', (e) => {{
-    if (e.key === 'Enter' || e.key === ' ') {{ e.preventDefault(); open(); }}
-  }});
-}});
-
-document.querySelectorAll('.nav-file-item[data-draft-key]').forEach(li => {{
-  const open = () => {{
-    const k = li.dataset.draftKey;
-    const text = DRAFTS[k] || DRAFTS['.draft/' + k]
-      || Object.entries(DRAFTS).find(([p]) => p.endsWith(k))?.[1] || '';
-    showFile(k, text, true);
-  }};
-  li.addEventListener('click', open);
-  li.addEventListener('keydown', (e) => {{
-    if (e.key === 'Enter' || e.key === ' ') {{ e.preventDefault(); open(); }}
-  }});
-}});
-
-showDiscover();
-try {{
-  const saved = localStorage.getItem('dk-center-view');
-  if (saved && saved.startsWith('file:')) {{
-    const key = saved.slice(5);
-    const draftText = DRAFTS[key] || DRAFTS['.draft/' + key]
-      || Object.entries(DRAFTS).find(([p]) => p.endsWith(key))?.[1];
-    if (DOCS[key]) showFile(key, DOCS[key], false);
-    else if (draftText) showFile(key, draftText, true);
-  }}
-}} catch (_) {{}}
-"""
-
-    product_card_hero = ""
-    if (product_dir / "product-README.md").is_file():
-        product_card_hero = (
-            '<p class="hero-card-link">'
-            '<a class="btn-product-card hero" data-doc="product-README.md" href="#">'
-            "Cartão do produto</a></p>"
-        )
-
-    body = f"""
-<header class="hero">
-  <div class="hero-top">
-    <div>
-      <h1>{escape(product)}</h1>
-      <p class="hero-sub">Domain-kit · mapeamento negócio → domínio</p>
-      {product_card_hero}
-    </div>
-    <div class="pills">
-      <span class="pill pill-accent">fase: {escape(phase)}</span>
-      <span class="pill">scan: {escape(scan)}</span>
-      <span class="pill">discover: {discover_total}%</span>
-      <span class="pill">{art_count} artefatos</span>
-      <span class="pill view-hint" id="view-hint">visão: menu Visão geral</span>
-    </div>
-  </div>
-</header>
-
-<div class="main-layout">
-  <aside class="sidebar">
-    <div class="sidebar-section">
-      <h3>Arquivos</h3>
-      <button type="button" class="nav-home active" id="nav-discover">
-        <span class="nav-home-title">Visão geral</span>
-        <span class="nav-home-sub">{discover_total}% · fases</span>
-      </button>
-      <input type="search" class="nav-file-search" id="nav-file-filter" placeholder="Filtrar arquivos…" autocomplete="off" />
-      <details class="nav-tree" open>
-        <summary>Artefatos ({art_count})</summary>
-        <ul class="nav-file-list">{art_items}</ul>
-      </details>
-      <details class="nav-tree" open>
-        <summary>Rascunhos ({draft_count})</summary>
-        <ul class="nav-file-list">{draft_list_html}</ul>
-      </details>
-    </div>
-    <div class="sidebar-section">
-      <h3>Fluxos</h3>
-      <div class="flow-list-compact">{flow_sidebar_html}</div>
-    </div>
-  </aside>
-
-  <div class="work-area">
-    <div id="center-discover" class="center-panel active">
-      {discover_home_html}
-    </div>
-    <div id="center-file" class="center-panel">
-      <div class="file-view-bar">
-        <button type="button" class="btn-back" id="back-discover">Voltar ao Discover</button>
-        <span class="file-breadcrumb">
-          <strong id="file-kind">Artefato</strong> / <code id="file-path">—</code>
-        </span>
-      </div>
-      <div class="preview-body" id="doc-preview"></div>
-    </div>
-  </div>
-</div>
-
-<div class="help">
-  <strong>Plan mode</strong> — rascunhos não contam nas fases até promote.
-  Discover unificado (fontes + DDD). Docs: <code>domain-kit/GUIDE.md</code>
-</div>
-"""
+    body = fill_template(
+        load_dashboard_template("product-body.html"),
+        {
+            "PRODUCT_TITLE": escape(product_title),
+            "PRODUCT_SUB": escape(product_sub),
+            "PHASE": escape(phase),
+            "SCAN": escape(scan),
+            "SCAN_CHIP_CLASS": scan_chip,
+            "DISCOVER_TOTAL": str(discover_total),
+            "ART_COUNT": str(art_count),
+            "FLOW_COUNT": str(len(flows)),
+            "DRAFT_COUNT": str(draft_count),
+            "JOURNEY_TRACK": render_journey_track(phases, p_idx),
+            "NOW_PANEL": render_now_panel(
+                str(next_cmd), phases, discover_fields, operacional_fields, p_idx
+            ),
+            "LOOPS_PANEL": render_loops_panel(status, product),
+            "ARTIFACTS_BY_PHASE": render_artifacts_by_phase(artifacts, phases),
+            "FLOWS_TAB": render_flows_tab(flows),
+            "DRAFTS_TAB": render_drafts_tab(pending, draft_files),
+            "COMMAND_MAP": render_command_map(phases, str(next_cmd)),
+        },
+    )
 
     return render_shell(
         f"Domain-Kit — {product}",
         body,
-        script,
+        depth=2,
         extra_head=dashboard_vendor_script_tags(depth=2),
+        bootstrap=bootstrap,
     )
+
 
 
 def build_hub_index(hub: Path) -> str:
@@ -1731,27 +1481,20 @@ def build_hub_index(hub: Path) -> str:
                 f"</a>"
             )
 
-    extra_css = """
-.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
-.product-card {
-  display: block; text-decoration: none; color: inherit; padding: 1.25rem;
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  transition: border-color 0.15s, transform 0.15s;
-}
-.product-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-.product-name { font-size: 1.15rem; font-weight: 650; margin-bottom: 0.5rem; }
-.product-meta { font-size: 0.82rem; color: var(--muted); }
-.product-meta code { color: var(--accent); font-size: 0.78rem; }
-"""
-    body = f"""
-<style>{extra_css}</style>
-<header class="hero">
-  <h1>Architecture Hub</h1>
-  <p class="hero-sub">Domain-kit — produtos em mapeamento de domínio</p>
-</header>
-<div class="product-grid">{''.join(cards) or '<div class="empty">Nenhum produto com domain-status.json</div>'}</div>
-"""
-    return render_shell("Domain-Kit Index", body)
+    cards_html = "".join(cards) or (
+        '<div class="empty">Nenhum produto com domain-status.json</div>'
+    )
+    asset_prefix = dashboard_asset_prefix(0)
+    body = fill_template(
+        load_dashboard_template("hub-index-body.html"),
+        {"PRODUCT_CARDS": cards_html},
+    )
+    return render_shell(
+        "Domain-Kit Index",
+        body,
+        depth=0,
+        extra_head=f'<link rel="stylesheet" href="{asset_prefix}/hub-index.css"/>',
+    )
 
 
 def main() -> int:

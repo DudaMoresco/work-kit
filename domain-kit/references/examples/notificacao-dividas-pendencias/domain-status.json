@@ -36,7 +36,7 @@
     "G0": [],
     "G1": [],
     "G2": [
-      "04-platform/01-non-functional/01-requisitos.md",
+      "01-product/04-operacional/requisitos.md",
       "flows-registry: need at least 1 fluxo(s) with status ready"
     ]
   },
@@ -51,7 +51,7 @@
     "estrategico": [],
     "descoberta": [],
     "operacional": [
-      "04-platform/01-non-functional/01-requisitos.md",
+      "01-product/04-operacional/requisitos.md",
       "flows-registry: need at least 1 fluxo(s) with status ready"
     ]
   },

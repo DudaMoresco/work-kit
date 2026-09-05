@@ -21,10 +21,9 @@ Relacionadas (não substituem esta skill):
 
 - `ddd-design-estrategico` — domínio/subdomínios (entrada típica)
 - `domain-storytelling` — cenários; glossário alimenta o dicionário UL
-- `ddd-integracao-contextos` — Conformista / ACL entre BCs (depois)
+- fora do escopo do domain-kit (design de solução / tático) — Conformista / ACL, camadas e agregados
 - `event-storming` — eventos para validar linguagem e limites
 - `event-storming-to-scenario-tables` — eventos/comandos após limites claros
-- `ddd-design-tatico` — camadas e agregados dentro dos BCs
 - `request-for-comments` — decisões de fronteira controversas
 
 Templates: [template.md](template.md) · Exemplos: [examples.md](examples.md) ·  
@@ -40,6 +39,21 @@ PlantUML: [references/plantuml-conventions.md](references/plantuml-conventions.m
 
 **Não usar** para só mapear subdomínios (`ddd-design-estrategico`) ou só
 narrar um cenário (`domain-storytelling`).
+
+---
+
+## Why decisions
+
+- Fronteiras de BC pela **coerência da linguagem**, não pelo organograma —
+  times seguem o modelo, não o contrário.
+- **Desafio do negócio** antes do mapa de BCs ancora o recorte (dores reais vs
+  desejo) e evita contextos genéricos demais.
+- Ambíguos e sinônimos tratados no dicionário UL evitam o mesmo rótulo com
+  significados conflitantes em produção.
+- Subdomínio ≠ BC: relaciona no doc sem forçar 1:1 com o mapa estratégico.
+- Um BC = um time dono (time pode ter vários BCs) — reduz conflitos de modelo.
+- Path sob `02-domain/` (desafio, UL, BCs) é o catálogo estável; glossários de
+  sessão ficam em discovery.
 
 ---
 
@@ -112,7 +126,7 @@ Escrever no disco — não só colar no chat.
 ### Onde salvar
 
 1. Path do usuário → usar.
-2. No `architecture-hub` (ou layout equivalente):
+2. No hub do produto (ou layout equivalente):
 
 ```text
 products/{produto}/01-product/02-domain/
@@ -131,7 +145,7 @@ Confirmar path na primeira gravação se ainda não estiver claro.
 Usar [template.md](template.md) (pode ser um MD consolidado **ou** a pasta
 acima; preferir pasta se houver vários BCs/cenários).
 
-Mapa de paths: [references/hub-paths.md](../references/hub-paths.md). Confirmar `{produto}` (e `{bc}` ou `{iniciativa}` quando aplicável) antes da 1ª gravação.
+Mapa de paths: [references/hub-paths.md](../../references/hub-paths.md). Confirmar `{produto}` (e `{bc}` ou `{iniciativa}` quando aplicável) antes da 1ª gravação.
 
 ---
 
@@ -200,6 +214,18 @@ Convenções: [references/plantuml-conventions.md](references/plantuml-conventio
 ### 8. Catálogo + abertos
 
 README hub com links; lista de hipóteses e termos ainda ambíguos.
+
+---
+
+## Anti-patterns
+
+- Colocar ACL, filas, payloads ou camadas técnicas no mapa de BCs de **negócio**.
+- Manter dois glossários conflitantes (sessão vs `linguagem-ubiqua.md`) sem
+  reconciliar — canônico é `02-domain/linguagem-ubiqua.md`.
+- Definir BCs pelo organograma ou por módulos de código, não pela linguagem.
+- Pular o desafio e ir direto a lista de contextos.
+- Compartilhar um BC entre dois times.
+- Tratar subdomínio como sinônimo de Bounded Context.
 
 ---
 

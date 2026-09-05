@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Domain-Kit — Biblioteca Comunitária (playground)</title>
+<style>
+:root {
+  --bg: #0c1017;
+  --bg-elev: #121824;
+  --surface: #171e2b;
+  --surface-2: #1e2738;
+  --line: #2a3548;
+  --line-soft: rgba(42, 53, 72, 0.65);
+  --text: #e9eef6;
+  --muted: #8b9bb0;
+  --faint: #5f6f86;
+  --accent: #e8a317;
+  --accent-soft: rgba(232, 163, 23, 0.14);
+  --accent-line: rgba(232, 163, 23, 0.45);
+  --ok: #3ecf8e;
+  --ok-soft: rgba(62, 207, 142, 0.12);
+  --warn: #f0b429;
+  --warn-soft: rgba(240, 180, 41, 0.12);
+  --bad: #f07178;
+  --bad-soft: rgba(240, 113, 120, 0.12);
+  --info: #6cb6ff;
+  --info-soft: rgba(108, 182, 255, 0.12);
+  --radius: 14px;
+  --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  font-family: var(--font);
+  background:
+    radial-gradient(ellipse 70% 40% at 15% -10%, rgba(232, 163, 23, 0.07), transparent),
+    radial-gradient(ellipse 50% 35% at 90% 0%, rgba(108, 182, 255, 0.05), transparent),
+    var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+button, input { font: inherit; }
+a { color: var(--accent); }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+
+.app {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+/* ── top bar ── */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.top-kicker {
+  margin: 0 0 0.25rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 650;
+}
+.top h1 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.4vw, 1.85rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+.top-sub {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  max-width: 36rem;
+}
+.top-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.chip strong { color: var(--text); font-weight: 650; }
+.chip.accent {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.chip.ok { border-color: rgba(62,207,142,.35); background: var(--ok-soft); color: var(--ok); }
+
+/* ── journey (pipeline mental) ── */
+.journey {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.25rem 1.25rem;
+  margin-bottom: 1.15rem;
+}
+.journey-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  align-items: baseline;
+}
+.journey-head h2 {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 650;
+}
+.journey-legend {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.journey-track {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.55rem;
+  position: relative;
+}
+@media (max-width: 720px) {
+  .journey-track { grid-template-columns: 1fr 1fr; }
+}
+.phase {
+  position: relative;
+  padding: 0.9rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-elev);
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  transition: border-color .15s, background .15s, transform .15s;
+}
+.phase:hover { border-color: var(--muted); transform: translateY(-1px); }
+.phase.done {
+  border-color: rgba(62,207,142,.35);
+  background: linear-gradient(180deg, var(--ok-soft), var(--bg-elev));
+}
+.phase.current {
+  border-color: var(--accent-line);
+  background: linear-gradient(180deg, var(--accent-soft), var(--bg-elev));
+  box-shadow: 0 0 0 1px rgba(232,163,23,.12);
+}
+.phase.pending { opacity: 0.78; }
+.phase-num {
+  display: inline-flex;
+  width: 1.35rem; height: 1.35rem;
+  align-items: center; justify-content: center;
+  border-radius: 50%;
+  font-size: 0.68rem;
+  font-weight: 700;
+  margin-bottom: 0.45rem;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.phase.done .phase-num { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.phase.current .phase-num { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.phase-title { display: block; font-size: 0.92rem; font-weight: 650; margin-bottom: 0.15rem; }
+.phase-cmd { display: block; font-family: var(--mono); font-size: 0.68rem; color: var(--muted); }
+.phase-status {
+  position: absolute;
+  top: 0.7rem; right: 0.7rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.phase.done .phase-status { color: var(--ok); }
+.phase.current .phase-status { color: var(--accent); }
+.phase.pending .phase-status { color: var(--faint); }
+
+.journey-note {
+  margin: 0.9rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.journey-note code { color: var(--accent); }
+
+/* ── now + loops ── */
+.main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.85fr);
+  gap: 1.15rem;
+  margin-bottom: 1.15rem;
+}
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.25rem;
+}
+.panel-label {
+  margin: 0 0 0.65rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 650;
+}
+
+.now-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.now-copy {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  max-width: 38rem;
+}
+
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.95rem 1.05rem;
+  border-radius: 12px;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  margin-bottom: 1rem;
+}
+.cta-cmd {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.cta-why { font-size: 0.84rem; color: var(--muted); flex: 1; min-width: 12rem; }
+.cta-actions { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+.btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary {
+  border-color: var(--accent-line);
+  background: rgba(232,163,23,.22);
+  color: var(--accent);
+}
+.btn.ghost { background: transparent; color: var(--muted); }
+
+.checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.check {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr auto;
+  gap: 0.55rem;
+  align-items: start;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-elev);
+  font-size: 0.86rem;
+}
+.check.done { border-color: rgba(62,207,142,.25); }
+.check .mark { color: var(--ok); font-weight: 700; line-height: 1.3; }
+.check:not(.done) .mark { color: var(--faint); }
+.check .hint { color: var(--muted); font-size: 0.78rem; }
+.check .tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+  padding-top: 0.15rem;
+}
+
+/* loops */
+.loop {
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg-elev);
+  margin-bottom: 0.55rem;
+}
+.loop:last-child { margin-bottom: 0; }
+.loop-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+.loop-copy { margin: 0 0 0.45rem; font-size: 0.8rem; color: var(--muted); }
+.loop code { color: var(--info); }
+.loop.idle { opacity: 0.85; }
+.loop.active {
+  border-color: rgba(108,182,255,.4);
+  background: var(--info-soft);
+}
+
+/* ── tabs: artefatos / fluxos / rascunhos ── */
+.work {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-elev);
+  padding: 0 0.5rem;
+}
+.tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.85rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.tab .count {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-weight: 700;
+}
+.tab-panels { padding: 1.1rem 1.25rem 1.35rem; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.phase-block { margin-bottom: 1.35rem; }
+.phase-block:last-child { margin-bottom: 0; }
+.phase-block-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.phase-block-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+.phase-block-head .status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.status.ok { color: var(--ok); }
+.status.current { color: var(--accent); }
+.status.pending { color: var(--faint); }
+
+.file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.file-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: var(--bg-elev);
+  color: inherit;
+  cursor: pointer;
+}
+.file-item:hover { border-color: var(--line); background: var(--surface-2); }
+.file-item.selected {
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.file-name {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ok);
+}
+.file-badge.draft { color: var(--info); }
+.file-badge.miss { color: var(--faint); }
+
+.flows {
+  display: grid;
+  gap: 0.5rem;
+}
+.flow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg-elev);
+}
+.flow-id {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+.flow-title { font-size: 0.9rem; font-weight: 600; }
+.flow-meta { font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem; }
+.flow-st {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+}
+.flow-st.ready { background: var(--ok-soft); color: var(--ok); }
+.flow-st.draft { background: var(--info-soft); color: var(--info); }
+.flow-st.todo { background: var(--surface-2); color: var(--faint); }
+
+.preview {
+  margin-top: 1rem;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  background: var(--bg-elev);
+  display: none;
+}
+.preview.open { display: block; }
+.preview-path {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  margin: 0 0 0.55rem;
+}
+.preview-body {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+}
+
+.help {
+  margin-top: 1.15rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--bg-elev);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.help strong { color: var(--text); }
+.footer {
+  margin-top: 1.75rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--faint);
+}
+
+/* playground banner */
+.playground-banner {
+  margin-bottom: 1rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  border: 1px dashed var(--accent-line);
+  background: var(--accent-soft);
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="playground-banner">
+    Playground de layout · dados fictícios de <strong>Biblioteca Comunitária</strong>
+    (referência: <code>exemplo-ciclo-completo.md</code>) · não é o gerador de produção
+  </div>
+
+  <header class="top">
+    <div>
+      <p class="top-kicker">Domain-kit · produto</p>
+      <h1>Biblioteca Comunitária</h1>
+      <p class="top-sub">
+        Jornada negócio → domínio. Pipeline termina em Operacional;
+        design tático e implementação ficam fora do escopo.
+      </p>
+    </div>
+    <div class="top-meta">
+      <span class="chip ok"><strong>scan</strong> done</span>
+      <span class="chip accent"><strong>fase</strong> operacional</span>
+      <span class="chip"><strong>artefatos</strong> 11</span>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <!-- Agora: próximo passo do ciclo -->
+    <section class="panel">
+      <p class="panel-label">Agora · §4 do ciclo completo</p>
+      <h2 class="now-title">Fechar o primeiro fluxo operacional</h2>
+      <p class="now-copy">
+        Estratégico e Descoberta passaram. O exemplo segue com
+        <strong>Empréstimo de exemplar</strong>, depois decisão D-01 e
+        <code>/domain.model --finalize</code> para fechar o MVP.
+      </p>
+
+      <div class="cta">
+        <div>
+          <div class="cta-cmd">/domain.flow 01</div>
+          <div class="cta-why">Gera <code>04-operacional/fluxos/01-….md</code> + atualiza flows-registry</div>
+        </div>
+        <div class="cta-actions">
+          <button type="button" class="btn primary" id="btn-copy-cmd">Copiar comando</button>
+          <button type="button" class="btn ghost" data-tab="fluxos">Ver fluxos</button>
+        </div>
+      </div>
+
+      <ul class="checklist">
+        <li class="check done">
+          <span class="mark">✓</span>
+          <span>Stories de empréstimo, reserva e multa <span class="hint">— descoberta</span></span>
+          <span class="tag">ok</span>
+        </li>
+        <li class="check done">
+          <span class="mark">✓</span>
+          <span>Event storming reserva → devolução <span class="hint">— descoberta</span></span>
+          <span class="tag">ok</span>
+        </li>
+        <li class="check">
+          <span class="mark">○</span>
+          <span>Fluxo 01 · Empréstimo de exemplar <span class="hint">— próximo</span></span>
+          <span class="tag">todo</span>
+        </li>
+        <li class="check">
+          <span class="mark">○</span>
+          <span>D-01 multa após X dias <span class="hint">— /domain.decision</span></span>
+          <span class="tag">todo</span>
+        </li>
+        <li class="check">
+          <span class="mark">○</span>
+          <span>NFRs + finalize Operacional <span class="hint">— /domain.model --finalize</span></span>
+          <span class="tag">todo</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Loops laterais do exemplo -->
+    <aside class="panel">
+      <p class="panel-label">Loops laterais</p>
+
+      <div class="loop idle">
+        <h3 class="loop-title">Fonte mudou</h3>
+        <p class="loop-copy">
+          Enunciado / repo atualizado → não reabre lacunas de negócio.
+        </p>
+        <code>/domain.scan biblioteca-comunitaria</code>
+      </div>
+
+      <div class="loop idle">
+        <h3 class="loop-title">Evolução (E-n)</h3>
+        <p class="loop-copy">
+          Ex.: renovação de empréstimo pelo membro — abre sessão, trabalha fases, fecha.
+        </p>
+        <code>/domain.change --kind evolution …</code>
+      </div>
+
+      <div class="loop idle">
+        <h3 class="loop-title">Problema (P-n)</h3>
+        <p class="loop-copy">
+          Ex.: multa em feriado municipal — ajusta UL/BC e fluxo.
+        </p>
+        <code>/domain.change --kind problem-new …</code>
+      </div>
+
+      <div class="loop" style="margin-top:0.75rem;border-style:dashed">
+        <h3 class="loop-title">Sessão ativa</h3>
+        <p class="loop-copy">Nenhuma. Use <code>/domain.change</code> para registrar E-n ou P-n.</p>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Pipeline mental do exemplo -->
+  <section class="journey" aria-label="Pipeline domain-kit">
+    <div class="journey-head">
+      <h2>Ciclo · install → init → discover* → flow* → model --finalize</h2>
+      <p class="journey-legend">Clique numa fase para filtrar artefatos</p>
+    </div>
+    <div class="journey-track" id="journey-track">
+      <button type="button" class="phase done" data-phase="evidencias">
+        <span class="phase-status">pass</span>
+        <span class="phase-num">1</span>
+        <span class="phase-title">Evidências</span>
+        <span class="phase-cmd">/domain.init · /domain.scan</span>
+      </button>
+      <button type="button" class="phase done" data-phase="estrategico">
+        <span class="phase-status">pass</span>
+        <span class="phase-num">2</span>
+        <span class="phase-title">Estratégico</span>
+        <span class="phase-cmd">/domain.discover --stage strategic|contexts</span>
+      </button>
+      <button type="button" class="phase done" data-phase="descoberta">
+        <span class="phase-status">pass</span>
+        <span class="phase-num">3</span>
+        <span class="phase-title">Descoberta</span>
+        <span class="phase-cmd">/domain.discover --stage stories|event-storming</span>
+      </button>
+      <button type="button" class="phase current" data-phase="operacional">
+        <span class="phase-status">agora</span>
+        <span class="phase-num">4</span>
+        <span class="phase-title">Operacional</span>
+        <span class="phase-cmd">/domain.flow · /domain.model --finalize</span>
+      </button>
+    </div>
+    <p class="journey-note">
+      Retrabalho de fase sobe de novo no discover/flow.
+      Loops laterais: <code>/domain.scan</code> (fonte mudou) e
+      <code>/domain.change</code> → trabalho → <code>--close</code> (E-n / P-n).
+    </p>
+  </section>
+
+  <!-- Artefatos por fase (como índice do product-README do exemplo) -->
+  <section class="work">
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" data-tab="artefatos" role="tab">
+        Artefatos por fase <span class="count">11</span>
+      </button>
+      <button type="button" class="tab" data-tab="fluxos" role="tab">
+        Fluxos <span class="count">3</span>
+      </button>
+      <button type="button" class="tab" data-tab="rascunhos" role="tab">
+        Rascunhos <span class="count">1</span>
+      </button>
+      <button type="button" class="tab" data-tab="mapa" role="tab">
+        Mapa de comandos
+      </button>
+    </div>
+
+    <div class="tab-panels">
+      <div class="tab-panel active" id="panel-artefatos">
+        <div class="phase-block" data-phase-block="evidencias">
+          <div class="phase-block-head">
+            <h3>Evidências</h3>
+            <span class="status ok">pass</span>
+          </div>
+          <ul class="file-list">
+            <li><button type="button" class="file-item" data-doc="sources.yml"><span class="file-name">sources.yml</span><span class="file-badge">ok</span></button></li>
+            <li><button type="button" class="file-item" data-doc="01-product/00-scan/sintese-evidencias.md"><span class="file-name">01-product/00-scan/sintese-evidencias.md</span><span class="file-badge">ok</span></button></li>
+            <li><button type="button" class="file-item" data-doc="product-README.md"><span class="file-name">product-README.md</span><span class="file-badge">ok</span></button></li>
+          </ul>
+        </div>
+        <div class="phase-block" data-phase-block="estrategico">
+          <div class="phase-block-head">
+            <h3>Estratégico</h3>
+            <span class="status ok">pass</span>
+          </div>
+          <ul class="file-list">
+            <li><button type="button" class="file-item" data-doc="01-product/01-vision/01-design-estrategico.md"><span class="file-name">01-vision/01-design-estrategico.md</span><span class="file-badge">ok</span></button></li>
+            <li><button type="button" class="file-item" data-doc="01-product/02-domain/desafio-negocio.md"><span class="file-name">02-domain/desafio-negocio.md</span><span class="file-badge">ok</span></button></li>
+            <li><button type="button" class="file-item" data-doc="01-product/02-domain/bounded-contexts.md"><span class="file-name">02-domain/bounded-contexts.md</span><span class="file-badge">ok</span></button></li>
+            <li><button type="button" class="file-item" data-doc="01-product/02-domain/linguagem-ubiqua.md"><span class="file-name">02-domain/linguagem-ubiqua.md</span><span class="file-badge">ok</span></button></li>
+          </ul>
+        </div>
+        <div class="phase-block" data-phase-block="descoberta">
+          <div class="phase-block-head">
+            <h3>Descoberta</h3>
+            <span class="status ok">pass</span>
+          </div>
+          <ul class="file-list">
+            <li><button type="button" class="file-item" data-doc="01-product/03-discovery/02-domain-storytelling/01-emprestimo.md"><span class="file-name">storytelling/01-emprestimo.md</span><span class="file-badge">ok</span></button></li>
+            <li><button type="button" class="file-item" data-doc="01-product/03-discovery/02-domain-storytelling/02-reserva.md"><span class="file-name">storytelling/02-reserva.md</span><span class="file-badge">ok</span></button></li>
+            <li><button type="button" class="file-item" data-doc="01-product/03-discovery/01-event-storming/"><span class="file-name">event-storming/ (ciclo reserva → devolução)</span><span class="file-badge">ok</span></button></li>
+          </ul>
+        </div>
+        <div class="phase-block" data-phase-block="operacional">
+          <div class="phase-block-head">
+            <h3>Operacional</h3>
+            <span class="status current">agora</span>
+          </div>
+          <ul class="file-list">
+            <li><button type="button" class="file-item" data-doc="flows-registry.yml"><span class="file-name">flows-registry.yml</span><span class="file-badge">ok</span></button></li>
+            <li><button type="button" class="file-item" data-doc="01-product/04-operacional/fluxos/"><span class="file-name">04-operacional/fluxos/ (0 promovidos)</span><span class="file-badge miss">pendente</span></button></li>
+            <li><button type="button" class="file-item" data-doc="01-product/04-operacional/requisitos.md"><span class="file-name">04-operacional/requisitos.md</span><span class="file-badge miss">pendente</span></button></li>
+            <li><button type="button" class="file-item" data-doc="05-decisoes/produto.md"><span class="file-name">05-decisoes/produto.md</span><span class="file-badge miss">pendente</span></button></li>
+          </ul>
+        </div>
+
+        <div class="preview" id="preview">
+          <p class="preview-path" id="preview-path">—</p>
+          <p class="preview-body" id="preview-body"></p>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-fluxos">
+        <div class="flows">
+          <div class="flow">
+            <div class="flow-id">01</div>
+            <div>
+              <div class="flow-title">Empréstimo de exemplar</div>
+              <div class="flow-meta">próximo · §4 do exemplo</div>
+            </div>
+            <span class="flow-st todo">todo</span>
+          </div>
+          <div class="flow">
+            <div class="flow-id">02</div>
+            <div>
+              <div class="flow-title">Reserva de título indisponível</div>
+              <div class="flow-meta">depois do D-01</div>
+            </div>
+            <span class="flow-st todo">todo</span>
+          </div>
+          <div class="flow">
+            <div class="flow-id">03</div>
+            <div>
+              <div class="flow-title">Renovação pelo membro</div>
+              <div class="flow-meta">só após /domain.change E-01</div>
+            </div>
+            <span class="flow-st draft">evolução</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-rascunhos">
+        <ul class="file-list">
+          <li>
+            <button type="button" class="file-item" data-doc=".draft/01-product/04-operacional/fluxos/01-emprestimo.md">
+              <span class="file-name">.draft/…/01-emprestimo.md</span>
+              <span class="file-badge draft">aguardando OK</span>
+            </button>
+          </li>
+        </ul>
+        <p style="margin:0.85rem 0 0;font-size:0.82rem;color:var(--muted)">
+          Plan mode: rascunhos não contam nas fases até promote.
+        </p>
+      </div>
+
+      <div class="tab-panel" id="panel-mapa">
+        <ul class="checklist">
+          <li class="check done"><span class="mark">✓</span><span><code>/domain.install</code> · hub zerado</span><span class="tag">feito</span></li>
+          <li class="check done"><span class="mark">✓</span><span><code>/domain.init</code> · bootstrap + 1º scan</span><span class="tag">feito</span></li>
+          <li class="check done"><span class="mark">✓</span><span><code>/domain.discover</code> · estratégico + descoberta</span><span class="tag">feito</span></li>
+          <li class="check"><span class="mark">→</span><span><code>/domain.flow</code> · fluxos 01, 02…</span><span class="tag">agora</span></li>
+          <li class="check"><span class="mark">○</span><span><code>/domain.decision</code> · D-01…</span><span class="tag">depois</span></li>
+          <li class="check"><span class="mark">○</span><span><code>/domain.model --finalize</code> · fechar Operacional</span><span class="tag">fim MVP</span></li>
+          <li class="check"><span class="mark">○</span><span><code>/domain.scan</code> · fonte externa mudou</span><span class="tag">loop</span></li>
+          <li class="check"><span class="mark">○</span><span><code>/domain.change</code> · E-n / P-n</span><span class="tag">loop</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="help">
+    <strong>Ideia deste layout:</strong> o dashboard conta o ciclo
+    (<code>exemplo-ciclo-completo.md</code>), não só lista arquivos.
+    Primário = onde você está + próximo comando.
+    Secundário = artefatos por fase, fluxos e loops (scan / change).
+  </div>
+
+  <p class="footer">Playground layout · domain-kit · não grava no hub</p>
+</div>
+
+<script>
+const DOCS = {
+  "sources.yml": "Fontes indexadas (repos, docs, iniciativa demo-iniciativa).",
+  "01-product/00-scan/sintese-evidencias.md": "Síntese do 1º scan — o hub sabe de onde tirar evidências.",
+  "product-README.md": "Cartão do produto Biblioteca Comunitária + índice de artefatos.",
+  "01-product/01-vision/01-design-estrategico.md": "Visão estratégica, subdomínios e delimitação do core.",
+  "01-product/02-domain/desafio-negocio.md": "Problema de negócio da biblioteca comunitária.",
+  "01-product/02-domain/bounded-contexts.md": "BCs: Empréstimo, Acervo, Membro…",
+  "01-product/02-domain/linguagem-ubiqua.md": "UL compartilhada (exemplar, reserva, multa…).",
+  "01-product/03-discovery/02-domain-storytelling/01-emprestimo.md": "Domain story: empréstimo de exemplar.",
+  "01-product/03-discovery/02-domain-storytelling/02-reserva.md": "Domain story: reserva de título.",
+  "01-product/03-discovery/01-event-storming/": "Event storming do ciclo reserva → devolução.",
+  "flows-registry.yml": "Catálogo de fluxos (01, 02, 03-evolução).",
+  "01-product/04-operacional/fluxos/": "Pasta de fluxos operacionais — ainda vazia no exemplo §4.",
+  "01-product/04-operacional/requisitos.md": "NFRs de produto — via /domain.model --finalize.",
+  "05-decisoes/produto.md": "Decisões D-n (multa, feriados, renovações).",
+  ".draft/01-product/04-operacional/fluxos/01-emprestimo.md": "Rascunho aguardando promote (plan mode).",
+};
+
+function showTab(name) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.id === "panel-" + name));
+}
+
+document.querySelectorAll(".tab, [data-tab]").forEach(el => {
+  if (el.classList.contains("btn") || el.classList.contains("tab")) {
+    el.addEventListener("click", () => {
+      const name = el.dataset.tab;
+      if (name) showTab(name);
+    });
+  }
+});
+
+document.querySelectorAll(".phase").forEach(btn => {
+  btn.addEventListener("click", () => {
+    showTab("artefatos");
+    const phase = btn.dataset.phase;
+    document.querySelectorAll("[data-phase-block]").forEach(block => {
+      const match = block.dataset.phaseBlock === phase;
+      block.style.outline = match ? "1px solid rgba(232,163,23,.45)" : "none";
+      block.style.borderRadius = match ? "12px" : "";
+      block.style.padding = match ? "0.65rem" : "";
+      block.style.background = match ? "rgba(232,163,23,.06)" : "";
+      if (match) block.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  });
+});
+
+const preview = document.getElementById("preview");
+const previewPath = document.getElementById("preview-path");
+const previewBody = document.getElementById("preview-body");
+
+document.querySelectorAll(".file-item").forEach(item => {
+  item.addEventListener("click", () => {
+    document.querySelectorAll(".file-item").forEach(x => x.classList.remove("selected"));
+    item.classList.add("selected");
+    const key = item.dataset.doc;
+    preview.classList.add("open");
+    previewPath.textContent = key;
+    previewBody.textContent = DOCS[key] || "Sem preview neste playground.";
+    showTab("artefatos");
+  });
+});
+
+document.getElementById("btn-copy-cmd").addEventListener("click", async () => {
+  const cmd = "/domain.flow 01";
+  try {
+    await navigator.clipboard.writeText(cmd);
+    const btn = document.getElementById("btn-copy-cmd");
+    const old = btn.textContent;
+    btn.textContent = "Copiado";
+    setTimeout(() => { btn.textContent = old; }, 1200);
+  } catch (_) {}
+});
+</script>
+</body>
+</html>

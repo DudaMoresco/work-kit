@@ -1,3 +1,5 @@
+> Preâmbulo compartilhado: [plantuml-preamble.md](../../../references/plantuml-preamble.md)
+
 # Convenções PlantUML — Levantamento de Requisitos
 
 Validar com MCP **`user-plantuml`**: `check_syntax`.

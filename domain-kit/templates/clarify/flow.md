@@ -11,8 +11,8 @@
 
 Template: [fluxo-operacional.md](../../templates/fluxo-operacional.md)
 
-**Path canônico (negócio):** `01-product/03-operacional/fluxos/{NN}-{slug}.md`
+**Path canônico (negócio):** `01-product/04-operacional/fluxos/{NN}-{slug}.md`
 
-**Detalhe técnico (arch-kit):** `arch/fluxos/{NN}-{slug}-tecnico.md` — opcional, após domain-kit.
+**Detalhe técnico (fora do escopo):** opcional — próxima etapa técnica (fora deste kit).
 
 Confirmar deps satisfeitas no `flows-registry.yml` antes de gravar.

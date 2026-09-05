@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -136,6 +137,11 @@ def print_visibility_markdown(summary: dict) -> None:
 
 
 def resolve_kit_root(hub: Path) -> Path:
+    env = os.environ.get("DOMAIN_KIT_ROOT")
+    if env:
+        candidate = Path(env).expanduser().resolve()
+        if candidate.is_dir():
+            return candidate
     cfg = hub / ".domain" / "config.yml"
     if cfg.exists():
         for line in cfg.read_text(encoding="utf-8").splitlines():
@@ -144,9 +150,6 @@ def resolve_kit_root(hub: Path) -> Path:
                 candidate = (hub / rel).resolve() if not Path(rel).is_absolute() else Path(rel)
                 if candidate.is_dir():
                     return candidate
-    candidate = hub.parent / "work-kit" / "domain-kit"
-    if candidate.is_dir():
-        return candidate
     return Path(__file__).resolve().parent.parent
 
 

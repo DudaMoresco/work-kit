@@ -14,7 +14,7 @@ disable-model-invocation: true
 | --- | --- |
 | Fontes + descoberta | `/domain.discover` |
 | Um fluxo | `/domain.flow {NN}` |
-| Design tático de BC | `/arch.capability {bc}` (arch-kit; `/domain.capability` deprecated) |
+| Design tático de BC | Fora do escopo do domain-kit (próxima etapa técnica) |
 | Re-sync fontes | `/domain.scan` |
 
 Roteiros em `.domain/clarify/*.md` são bancos internos — o agente carrega automaticamente.

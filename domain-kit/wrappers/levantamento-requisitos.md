@@ -7,6 +7,4 @@
 **Pré-condições:** fluxos ou ES disponíveis
 
 **Outputs no hub:**
-- `products/{produto}/04-platform/01-non-functional/01-requisitos.md`
-
-**Nota:** path em `04-platform/` mas owned pelo domain-kit na fase Operacional (NFRs de produto).
+- `products/{produto}/01-product/04-operacional/requisitos.md`

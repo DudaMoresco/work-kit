@@ -4,14 +4,16 @@ Documentação para mantenedores e arquitetos.
 
 ---
 
-## Posição no pipeline
+## Escopo do pipeline
 
 ```text
-domain-kit  →  arch-kit  →  delivery-kit  →  spec-kit  →  código
-   ↑ você está aqui
+Evidências → Estratégico → Descoberta → Operacional
+   ↑ você está aqui (domain-kit)
 ```
 
-Handoff domain → arch quando fase **Operacional** PASS (alias G2). Ver [references/handoffs.md](references/handoffs.md) e [references/gates.yml](references/gates.yml).
+O pipeline do domain-kit **termina em Operacional**. A próxima etapa técnica fica **fora do escopo do domain-kit**.
+
+Critérios de fase: [references/gates.yml](references/gates.yml). Handoffs internos: [references/handoffs.md](references/handoffs.md).
 
 ---
 
@@ -19,12 +21,12 @@ Handoff domain → arch quando fase **Operacional** PASS (alias G2). Ver [refere
 
 | Camada | Comandos | Papel |
 | --- | --- | --- |
-| **Hub** | install | Framework no hub (1×) |
+| **Hub** | install | Kit no hub (1×) |
 | **Meta** | init, scan, status, change | Bootstrap, re-sync, visibilidade, sessões evolutivas |
 | **Macro** | discover, model | Estratégico/Descoberta; fechar Operacional |
 | **Micro** | flow, decision | Uma unidade por sessão |
 
-~~capability~~ → arch-kit. Macro = conveniente; **micro** recomendado com N fluxos.
+~~capability~~ — **fora do escopo do domain-kit**. Macro = conveniente; **micro** recomendado com N fluxos.
 
 ---
 
@@ -37,21 +39,21 @@ Handoff domain → arch quando fase **Operacional** PASS (alias G2). Ver [refere
 | `flows-registry.yml` | Catálogo fluxo-NN, deps, status |
 | `scan-manifest.json` | Findings de fontes externas |
 | `CHANGELOG.md` | Histórico de scans e mudanças |
-| `03-registry/produto.md` | Decisões D-n |
+| `05-decisoes/produto.md` | Decisões D-n |
 | Artefatos MD | Conteúdo; dashboard só lê |
 
 Dashboard é **read-only**. PlantUML: porta **8765** — [references/plantuml-dashboard.md](references/plantuml-dashboard.md).
 
 ---
 
-## Fases (aliases G0–G2)
+## Fases
 
 | Fase | Após | Critério resumido |
 | --- | --- | --- |
-| **Evidências** (G0) | init | sources + scan (manifest ou skip) |
+| **Evidências** | init | sources + scan (manifest ou skip) |
 | **Estratégico** | discover contexts | design + desafio + BCs + UL |
 | **Descoberta** | stories / ES | event-storming **ou** storytelling |
-| **Operacional** (G2) | flow + model --finalize | ≥1 fluxo ready + NFR + registry |
+| **Operacional** | flow + model --finalize | ≥1 fluxo ready + NFR + registry |
 
 **Não** exige integração técnica nem design tático para fechar Operacional.
 
@@ -69,7 +71,7 @@ sequenceDiagram
   participant Init as domain_init
   participant Plan as scan_discover
   participant MCP as GitHub_MCP
-  participant Hub as architecture_hub
+  participant Hub as product_hub
   participant Discover as domain_discover
 
   User->>Init: domain.init
@@ -103,9 +105,10 @@ Todo conteúdo: **rascunho** (`.draft/` + chat) → **OK** → hub. [references/
 | --- | --- |
 | `01-product/00-scan/` | `/domain.init` ou `/domain.scan` |
 | `01-product/01-vision/`, `02-domain/`, `03-discovery/` | `/domain.discover` |
-| `01-product/03-operacional/fluxos/` | `/domain.flow` |
-| `04-platform/01-non-functional/` | `/domain.model` |
-| `arch/{bc}/`, `arch/01-integration/` | arch-kit (não domain) |
+| `01-product/04-operacional/fluxos/` | `/domain.flow` |
+| `01-product/04-operacional/` | `/domain.model` |
+
+Pastas de design de solução / integração técnica ficam **fora do escopo do domain-kit**.
 
 `/domain.init` cria índices + primeiro scan. **`--adopt`** para produtos já no hub.
 
@@ -115,7 +118,7 @@ Todo conteúdo: **rascunho** (`.draft/` + chat) → **OK** → hub. [references/
 
 Know-how: `domain-kit/skills/{nome}/SKILL.md` → após install `.domain/skills/`.
 
-Wrappers: paths/fases — **autoridade de path**. Skill = know-how (pode citar paths legados; ignore e use o wrapper).
+Wrappers: paths/fases — **autoridade de path**. Skill = know-how; em conflito de path, o wrapper vence ([hub-paths.md](references/hub-paths.md)).
 
 ---
 
@@ -125,9 +128,7 @@ Wrappers: paths/fases — **autoridade de path**. Skill = know-how (pode citar p
 
 - `fluxo-NN` com deps
 - Status: `draft` → `clarifying` → `ready`
-- Path canônico: `01-product/03-operacional/fluxos/{NN}-{slug}.md`
-
-Legado: `02-capabilities/{bc}/fluxos/` ainda conta no adopt/validate, mas **novos** fluxos usam operacional.
+- Path canônico: `01-product/04-operacional/fluxos/{NN}-{slug}.md`
 
 `/domain.flow NN` valida deps via `flow_deps.py`.
 
@@ -153,8 +154,8 @@ domain-kit/
 ```
 
 ```text
-architecture-hub/
-├── .domain/            ← config, scripts, clarify/, skills/, wrappers/
+hub/                      ← raiz de products/ (ex.: architecture-hub)
+├── .domain/              ← config, scripts, clarify/, skills/, wrappers/
 └── .cursor/skills/domain-*/
 ```
 

@@ -10,15 +10,12 @@ Know-how DDD e de modelagem **incluído no kit** (repo autossuficiente). Não de
 | `event-storming-to-scenario-tables` | `/domain.discover` (opcional) |
 | `ddd-linguagem-e-contextos` | `/domain.discover` (contexts) |
 | `levantamento-requisitos` | `/domain.model` |
-| `fluxos-entregaveis` | `/domain.flow` (know-how; paths via wrapper → `03-operacional/fluxos/`) |
-| `fluxogramas-decisao` | `/domain.discover --mode as-is-first` |
+| `fluxos-entregaveis` | `/domain.flow` (know-how; paths via wrapper → `04-operacional/fluxos/`) |
+| `fluxogramas-decisao` | `/domain.discover --mode as-is-first` → `03-discovery/00-as-is/` |
 
-## Arch-kit (bundled para referência / handoff)
+## Fora do escopo
 
-| Skill | Nota |
-| --- | --- |
-| `ddd-design-tatico` | Preferir arch-kit; `/domain.capability` deprecated |
-| `ddd-integracao-contextos` | Detalhe técnico em `arch/01-integration/` |
+Design tático e integração técnica (camadas, agregados, ACL detalhada) estão **fora do escopo do domain-kit** — não há skill bundled para isso. `/domain.capability` redireciona; próxima etapa técnica fica fora do kit.
 
 ## Uso
 

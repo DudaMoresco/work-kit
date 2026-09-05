@@ -2,7 +2,7 @@
 name: domain-kit
 description: >-
   Modelagem de problema e domínio no hub: Evidências → Estratégico → Descoberta → Operacional.
-  Design tático no arch-kit.
+  Design tático e implementação ficam fora do escopo do domain-kit.
 disable-model-invocation: true
 ---
 
@@ -14,10 +14,12 @@ disable-model-invocation: true
 
 ```text
 domain.install → domain.init (evidências) → domain.discover (estratégico + descoberta)
-  → domain.flow (operacional) → domain.model --finalize (operacional) → arch.route
+  → domain.flow (operacional) → domain.model --finalize (operacional)
 ```
 
-## Fases (substituem gates G0–G2)
+Após **Operacional**, a próxima etapa técnica fica **fora do escopo do domain-kit**.
+
+## Fases
 
 | Fase | Pergunta | Artefatos principais |
 | --- | --- | --- |
@@ -25,9 +27,6 @@ domain.install → domain.init (evidências) → domain.discover (estratégico +
 | **Estratégico** | Por quê? Onde? Como falamos? | design estratégico, desafio, BCs, UL |
 | **Descoberta** | Como se comporta no tempo? | stories, event storming |
 | **Operacional** | Quais cenários garantir? | fluxos negócio, NFRs produto, D-n |
-| **Arch-kit** | Como implementar? | design tático, integração técnica |
-
-Aliases legados: G0=Evidências, G1=Estratégico+Descoberta, G2=Operacional.
 
 ## Cartão central do produto
 
@@ -42,7 +41,7 @@ Atualizar após promote material em discover (contexts), model (--finalize) e `/
 | Entrada de sessão | — | `domain-status.json` → `activeChange` |
 | Problemas / lacunas | P-n | `01-product/02-domain/abertos.md` |
 | Evoluções intencionais | E-n | `01-product/02-domain/evolucoes.md` |
-| Decisões | D-n | `03-registry/produto.md` |
+| Decisões | D-n | `05-decisoes/produto.md` |
 
 Ritual: `/domain.change` → handoff discover/flow/model/scan/decision. Ver `.domain/clarify/evolucao.md`.
 
@@ -64,7 +63,7 @@ Propor → .draft/ + chat → OK do usuário → path canônico
 | `domain.change` | Sessão evolutiva (P-n / E-n) |
 | `domain.status` | Leitura de progresso |
 | `domain.scan` | Re-sync evidências |
-| `domain.capability` | **DEPRECATED** → arch-kit |
+| `domain.capability` | **Fora do escopo do domain-kit** |
 
 Helper: `.domain/scripts/promote_draft.py`, `adopt_product.py`, `validate_gate.py`
 

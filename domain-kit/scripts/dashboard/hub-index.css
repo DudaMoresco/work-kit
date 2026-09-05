@@ -1,0 +1,10 @@
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+.product-card {
+  display: block; text-decoration: none; color: inherit; padding: 1.25rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  transition: border-color 0.15s, transform 0.15s;
+}
+.product-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.product-name { font-size: 1.15rem; font-weight: 650; margin-bottom: 0.5rem; }
+.product-meta { font-size: 0.82rem; color: var(--muted); }
+.product-meta code { color: var(--accent); font-size: 0.78rem; }

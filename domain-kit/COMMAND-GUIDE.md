@@ -11,19 +11,17 @@ Idioma dos artefatos: **pt-BR**. Contrato: [references/plan-mode.md](references/
 | Comando | Entrega real (peso) | Fase | NÃO entrega |
 | --- | --- | --- | --- |
 | `/domain.install` | Comandos `domain-*`, `.domain/skills/`, wrappers, scripts, MCP checklist | — | Artefato de produto |
-| `/domain.init {p}` | Índices + **primeiro scan** + **síntese** | **Evidências** | Lacunas (0b), BCs, ES, fluxos, tático |
+| `/domain.init {p}` | Índices + **primeiro scan** + **síntese** | **Evidências** | Lacunas (0b), BCs, ES, fluxos, design de solução |
 | `/domain.init {p} --adopt` | Índices faltantes + inventário + gaps | — | Não recria conteúdo existente |
 | `/domain.scan {p}` | Delta no manifest + refresh síntese + CHANGELOG | Evidências (re-sync) | Lacunas (0b), DDD |
-| `/domain.discover {p}` | Lacunas (0b) + DDD **por estágio** (`--stage`) | **Estratégico** / **Descoberta** | Tático, fluxos to-be, integração técnica |
-| `/domain.flow {NN}` | 1 fluxo **operacional de negócio** | **Operacional** | Serviços/filas (arch), outros fluxos |
+| `/domain.discover {p}` | Lacunas (0b) + DDD **por estágio** (`--stage`) | **Estratégico** / **Descoberta** | Design de solução, fluxos to-be, integração técnica |
+| `/domain.flow {NN}` | 1 fluxo **operacional de negócio** | **Operacional** | Serviços/filas, outros fluxos |
 | `/domain.decision` | 1 linha D-n no registry | Operacional | Texto longo duplicado |
 | `/domain.model {p}` | NFRs de produto (draft) | Operacional | Finalize |
-| `/domain.model {p} --finalize` | NFRs + validação Operacional | **Operacional** | C4, ADR, design tático, database-model |
+| `/domain.model {p} --finalize` | NFRs + validação Operacional | **Operacional** | C4, ADR, design tático, modelo de dados físico |
 | `/domain.change` | Sessão P-n / E-n + `activeChange` + handoff | Transversal | Artefatos DDD diretos |
 | `/domain.status {p}` | Diagnóstico de fases + próximo comando | — | Conteúdo novo |
-| ~~`/domain.capability`~~ | **Deprecated** → arch-kit | — | — |
-
-**Alias deprecado:** `/workkit.init` → `/domain.install`.
+| ~~`/domain.capability`~~ | **Fora do escopo do domain-kit** | — | — |
 
 ---
 
@@ -34,9 +32,11 @@ Idioma dos artefatos: **pt-BR**. Contrato: [references/plan-mode.md](references/
 /domain.init meu-produto                # Evidências
 /domain.discover                        # lacunas + auto: próximo estágio
 /domain.discover --stage strategic      # ou contexts | stories | event-storming
-/domain.flow 01 … NN                    # 1 fluxo = 1 sessão (03-operacional/fluxos/)
-/domain.model --finalize                # Operacional → /arch.route
+/domain.flow 01 … NN                    # 1 fluxo = 1 sessão (04-operacional/fluxos/)
+/domain.model --finalize                # Operacional
 ```
+
+Após **Operacional**, a próxima etapa técnica fica **fora do escopo do domain-kit**.
 
 Re-sync: `/domain.scan`. Evolução: `/domain.change`.
 
@@ -70,15 +70,17 @@ Não sabe onde está?
   └─ /domain.status {p}
 ```
 
-Design tático / integração técnica → **arch-kit**, não domain-kit.
+Design tático / integração técnica / implementação → **fora do escopo do domain-kit**.
 
 ---
 
 ## Cenários — produtos antigos
 
+Narrativa ponta a ponta (produto novo + evolução + problema): [references/exemplo-ciclo-completo.md](references/exemplo-ciclo-completo.md).
+
 ### A — Produto novo (greenfield)
 
-Ver pipeline acima. Plan mode em cada artefato.
+Ver pipeline acima e o exemplo completo. Plan mode em cada artefato.
 
 ### B — Sistema legado em produção
 
@@ -88,8 +90,9 @@ Ver pipeline acima. Plan mode em cada artefato.
   → regras atuais (fluxogramas) + UL + BCs mínimos
 /domain.flow 01 …
 /domain.model --finalize
-/arch.route                        → tático + database-model no arch-kit
 ```
+
+Após **Operacional**, a próxima etapa técnica (design de solução, modelo de dados) fica **fora do escopo do domain-kit**.
 
 ### C — Produto já no hub, nunca passou pelo domain-kit
 
@@ -110,7 +113,7 @@ Ver pipeline acima. Plan mode em cada artefato.
 | Nova jornada | `/domain.flow {NN}` |
 | Nova regra / lacuna | `/domain.change` → discover/decision |
 | Revalidar fase | `/domain.model --finalize` |
-| Implementação | `/arch.route` / arch commands |
+| Implementação / design de solução | Fora do escopo do domain-kit |
 
 **Não rerodar** discover completo salvo redefinição de domínio.
 
@@ -138,7 +141,7 @@ Ver pipeline acima. Plan mode em cada artefato.
 
 Validação: `.domain/scripts/validate_gate.py --phase operacional --product {p} --suggest`
 
-Aliases: `--gate G0|G1|G2` ainda funcionam. Definição: [references/gates.yml](references/gates.yml).
+Definição máquina: [references/gates.yml](references/gates.yml).
 
 ---
 
@@ -149,9 +152,9 @@ Aliases: `--gate G0|G1|G2` ainda funcionam. Definição: [references/gates.yml](
 | `init` = só índices | **Não** — inclui primeiro scan + síntese (Evidências) |
 | `install` = init | **Não** — install = hub; init = produto |
 | `scan` = discover | **Não** — scan = fontes; discover = negócio |
-| Preciso de capability para fechar | **Não** — tático é arch-kit; Operacional = fluxos negócio + NFR |
-| Fluxos em `02-capabilities/` | **Legado** — novos em `01-product/03-operacional/fluxos/` |
-| `model` faz integração ACL | **Não** — integração técnica → `arch/01-integration/` |
+| Preciso de capability para fechar | **Não** — capability está fora do escopo; Operacional = fluxos negócio + NFR |
+| Onde gravar fluxos? | `01-product/04-operacional/fluxos/` — ver [hub-paths.md](references/hub-paths.md) |
+| `model` faz integração ACL | **Não** — integração técnica fica fora do escopo do domain-kit |
 
 ---
 
@@ -181,7 +184,6 @@ flowchart TB
   DIS --> FL
   FL --> MOD
   DEC --> MOD
-  MOD --> ARCH["/arch.route"]
   STA -.-> INI
   STA -.-> DIS
   STA -.-> MOD

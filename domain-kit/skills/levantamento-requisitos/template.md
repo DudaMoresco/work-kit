@@ -78,4 +78,4 @@ S2 --> S3
 
 ## 9. Próximo passo
 
-`task-refinement` (e, se necessário, `ddd-design-tatico`).
+`task-refinement`; design tático fica fora do escopo do domain-kit (design de solução / tático).

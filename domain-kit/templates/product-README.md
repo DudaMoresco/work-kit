@@ -5,11 +5,15 @@
 
 ## Visão geral
 
+> **Por que esta seção:** resume o produto em uma tela para onboarding de PM/negócio.
+
 - **O que é:** {o_que_e}
 - **Problema que resolve:** {problema}
 - **Onde está disponível:** {onde_disponivel}
 
 ## Principais benefícios
+
+> **Por que esta seção:** deixa explícito valor para usuário, negócio e operação — alinha expectativa antes dos artefatos.
 
 ### Para o usuário
 
@@ -25,6 +29,8 @@
 
 ## Status do domain-kit
 
+> **Por que esta seção:** mostra fase atual e próximo passo sem abrir o dashboard.
+
 | Fase | Status | Próximo passo |
 | --- | --- | --- |
 | Evidências | {fase_evidencias} | {passo_evidencias} |
@@ -36,9 +42,13 @@ Fase atual: **{phase}** · [Dashboard](dashboard.html)
 
 ## Sessão ativa
 
+> **Por que esta seção:** aponta a mudança/draft em andamento para continuidade da sessão.
+
 {active_change_section}
 
 ## Índice de artefatos
+
+> **Por que esta seção:** mapa rápido dos paths canônicos do produto (hub-paths).
 
 ### Evidências
 
@@ -60,12 +70,14 @@ Fase atual: **{phase}** · [Dashboard](dashboard.html)
 
 ### Operacional
 
-- [Fluxos de negócio](01-product/03-operacional/fluxos/)
-- [Requisitos NFR](04-platform/01-non-functional/01-requisitos.md)
-- [Registry de decisões](03-registry/produto.md)
+- [Fluxos de negócio](01-product/04-operacional/fluxos/)
+- [Requisitos NFR](01-product/04-operacional/requisitos.md)
+- [Registry de decisões](05-decisoes/produto.md)
 - [Catálogo de fluxos](flows-registry.yml)
 
 ## Problemas e evoluções em aberto
+
+> **Por que esta seção:** superfície P-n/E-n no cartão; detalhe vive em `02-domain/`.
 
 ### Problemas (P-n)
 
@@ -80,5 +92,7 @@ Ver inventário completo em [evolucoes.md](01-product/02-domain/evolucoes.md).
 {evolucoes_abertas_resumo}
 
 ## Changelog recente
+
+> **Por que esta seção:** histórico curto de mudanças de produto/docs sem abrir o CHANGELOG inteiro.
 
 Ver [CHANGELOG.md](CHANGELOG.md).

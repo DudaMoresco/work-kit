@@ -24,7 +24,7 @@ $ARGUMENTS
    - Tabela fases (PASS/FAIL + issues)
    - **Sessão ativa** (`activeChange`) se preenchido — P-n/E-n em andamento
    - Gaps por artefato (estratégico, descoberta, operacional)
-   - Artefatos arch-kit adotados (`arch.capabilitiesAdopted`, `integrationAdopted`)
+   - Artefatos técnicos adotados fora do escopo (`arch.capabilitiesAdopted`, `integrationAdopted`) se presentes
    - Link para [`product-README.md`](products/{p}/product-README.md) e `dashboard.html`
    - **Próximo comando sugerido**
 
@@ -37,12 +37,4 @@ $ARGUMENTS
 | Descoberta | Stories e/ou event storming | `/domain.discover --stage stories\|event-storming` |
 | Operacional | Fluxos de negócio + NFRs + D-n | `/domain.flow`, `/domain.model --finalize` |
 | Mudança / problema / evolução | Sessão evolutiva | `/domain.change` |
-| Todas PASS | Handoff arch-kit | `/arch.route` |
-
-## Aliases legados (gates)
-
-| Gate | Equivale a |
-| --- | --- |
-| G0 | Evidências |
-| G1 | Estratégico + Descoberta |
-| G2 | Operacional |
+| Todas PASS | Fim do domain-kit | Próxima etapa técnica (fora deste kit) |

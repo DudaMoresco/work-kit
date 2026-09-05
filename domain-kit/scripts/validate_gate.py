@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Validate domain-kit phases for a product in architecture-hub.
+"""Validate domain-kit phases for a product in the hub.
 
-Phases: evidencias → estrategico → descoberta → operacional → arch-kit handoff.
-Legacy gate aliases: G0=evidencias, G1=estrategico+descoberta, G2=operacional.
+Phases: evidencias → estrategico → descoberta → operacional.
 """
 
 from __future__ import annotations
@@ -42,26 +41,16 @@ PHASES = {
         "name": "Operacional",
         "question": "Quais cenários ponta a ponta queremos garantir?",
         "paths": [
-            "04-platform/01-non-functional/01-requisitos.md",
-            "03-registry/produto.md",
+            "01-product/04-operacional/requisitos.md",
+            "05-decisoes/produto.md",
         ],
         "fluxos_min": 1,
     },
 }
 
-# Legacy gate → phase mapping (G1 requires both estrategico and descoberta)
-GATE_ALIASES = {
-    "G0": ["evidencias"],
-    "G1": ["estrategico", "descoberta"],
-    "G2": ["operacional"],
-}
-
 PHASE_ORDER = ["evidencias", "estrategico", "descoberta", "operacional"]
 
-OPERACIONAL_FLUXOS_DIR = "01-product/03-operacional/fluxos"
-LEGACY_FLUXOS_GLOB = "02-capabilities/**/fluxos/*.md"
-ARCH_INTEGRATION_PATH = "arch/01-integration/01-contextos.md"
-LEGACY_INTEGRATION_PATH = "01-product/04-integration/01-contextos.md"
+OPERACIONAL_FLUXOS_DIR = "01-product/04-operacional/fluxos"
 
 
 def check_evidencias(product_dir: Path, status: dict) -> tuple[bool, list[str]]:
@@ -90,6 +79,8 @@ def check_paths(product_dir: Path, rel_paths: list[str]) -> list[str]:
     return missing
 
 
+
+
 def check_one_of_dirs(product_dir: Path, dirs: list[str]) -> bool:
     for d in dirs:
         p = product_dir / d
@@ -103,31 +94,15 @@ def count_operacional_flows(product_dir: Path) -> tuple[int, int]:
     reg = product_dir / "flows-registry.yml"
     op_dir = product_dir / OPERACIONAL_FLUXOS_DIR
     op_files = list(op_dir.glob("*.md")) if op_dir.is_dir() else []
-    legacy_files = list(product_dir.glob(LEGACY_FLUXOS_GLOB))
 
     if reg.exists():
-        text = reg.read_text(encoding="utf-8")
-        ready = len(re.findall(r"status:\s*ready", text))
-        total = len(re.findall(r"id:\s*fluxo-", text))
+        body = reg.read_text(encoding="utf-8")
+        ready = len(re.findall(r"status:\s*ready", body))
+        total = len(re.findall(r"id:\s*fluxo-", body))
         if total > 0:
             return ready, total
 
-    total_files = len(op_files) + len(legacy_files)
-    return total_files, total_files
-
-
-def has_arch_legacy(product_dir: Path, status: dict) -> bool:
-    arch = status.get("arch") or {}
-    if arch.get("integrationAdopted") or arch.get("capabilitiesAdopted"):
-        return True
-    if (product_dir / ARCH_INTEGRATION_PATH).is_file():
-        return True
-    cap_root = product_dir / "02-capabilities"
-    if cap_root.is_dir():
-        for bc_dir in cap_root.iterdir():
-            if bc_dir.is_dir() and (bc_dir / "design-tatico.md").is_file():
-                return True
-    return False
+    return len(op_files), len(op_files)
 
 
 def validate_phase(
@@ -183,54 +158,29 @@ def reg_has_flows(product_dir: Path) -> bool:
     return bool(re.search(r"id:\s*fluxo-", reg.read_text(encoding="utf-8")))
 
 
-def validate_gate_alias(
-    product_dir: Path,
-    gate: str,
-    status: dict,
-    mode: str = "full",
-) -> tuple[bool, list[str]]:
-    phases = GATE_ALIASES.get(gate, [])
-    if not phases:
-        return False, [f"unknown gate {gate}"]
-    all_issues: list[str] = []
-    all_pass = True
-    for phase in phases:
-        ok, issues = validate_phase(product_dir, phase, status, mode=mode)
-        if not ok:
-            all_pass = False
-            all_issues.extend(issues)
-    return all_pass, all_issues
-
-
 def has_evidence_brief(product_dir: Path) -> bool:
     return (product_dir / "01-product/00-scan/sintese-evidencias.md").is_file()
 
 
 def suggest_next_command(results: dict[str, dict], product_dir: Path | None = None) -> str:
-    def passed(name: str) -> bool:
-        return results.get(name, {}).get("pass", False)
-
-    ev = passed("evidencias")
-    est = passed("estrategico")
-    desc = passed("descoberta")
-    op = passed("operacional")
-    op_issues = results.get("operacional", {}).get("issues", [])
-
-    if not ev:
+    if not results.get("evidencias", {}).get("pass"):
         return "/domain.init {produto}  # completar evidências (scan)"
-    if product_dir is not None and ev and not has_evidence_brief(product_dir):
-        return "/domain.init {produto}  # completar síntese de evidências"
-    if not est:
-        return "/domain.discover {produto} --stage strategic|contexts  # fase estratégico"
-    if not desc:
-        return "/domain.discover {produto} --stage stories|event-storming  # fase descoberta"
-    if not op:
+    if product_dir and not has_evidence_brief(product_dir):
+        return "/domain.init {produto}  # síntese de evidências"
+    if not results.get("estrategico", {}).get("pass"):
+        return "/domain.discover {produto} --stage strategic|contexts"
+    if not results.get("descoberta", {}).get("pass"):
+        return "/domain.discover {produto} --stage stories|event-storming"
+    if not results.get("operacional", {}).get("pass"):
+        op_issues = results.get("operacional", {}).get("issues", [])
+        if any("fluxo" in i for i in op_issues):
+            return "/domain.flow 01  # ou próximo NN em flows-registry"
         if any("requisitos" in i for i in op_issues):
             return "/domain.model {produto} --finalize  # requisitos NFR de produto"
-        if any("fluxo" in i.lower() for i in op_issues):
-            return "/domain.flow {NN}  # fluxo operacional de negócio"
-        return "/domain.model {produto} --finalize  # fechar fase operacional"
-    return "/arch.route {produto}  # operacional ok — handoff arch-kit"
+        if any("05-decisoes" in i or "registry" in i for i in op_issues):
+            return "/domain.decision  # registry D-n"
+        return "/domain.model {produto} --finalize"
+    return "Fases do domain-kit concluídas"
 
 
 def compute_product_phase(results: dict[str, dict]) -> str:
@@ -246,24 +196,13 @@ def compute_product_phase(results: dict[str, dict]) -> str:
 
 
 def migrate_status_schema(status: dict, results: dict[str, dict]) -> dict:
-    """Merge legacy gates/discover/model into phases schema."""
-    phases_pass = {p: results[p]["pass"] for p in PHASE_ORDER if p in results}
-    status["phases"] = phases_pass
-    status["phaseIssues"] = {p: results[p].get("issues", []) for p in PHASE_ORDER if p in results}
-    # Legacy aliases for tools not yet updated
-    status["gates"] = {
-        "G0": phases_pass.get("evidencias", False),
-        "G1": phases_pass.get("estrategico", False) and phases_pass.get("descoberta", False),
-        "G2": phases_pass.get("operacional", False),
+    """Write phases schema into domain-status.json fields."""
+    status["phases"] = {p: results[p]["pass"] for p in PHASE_ORDER if p in results}
+    status["phaseIssues"] = {
+        p: results[p].get("issues", []) for p in PHASE_ORDER if p in results
     }
-    status["gateIssues"] = {
-        "G0": status["phaseIssues"].get("evidencias", []),
-        "G1": (
-            status["phaseIssues"].get("estrategico", [])
-            + status["phaseIssues"].get("descoberta", [])
-        ),
-        "G2": status["phaseIssues"].get("operacional", []),
-    }
+    status.pop("gates", None)
+    status.pop("gateIssues", None)
     status["phase"] = compute_product_phase(results)
     return status
 
@@ -275,14 +214,8 @@ def main() -> int:
     parser.add_argument(
         "--phase",
         choices=PHASE_ORDER + ["all"],
-        default=None,
-        help="Phase to validate",
-    )
-    parser.add_argument(
-        "--gate",
-        choices=["G0", "G1", "G2", "all"],
-        default=None,
-        help="Legacy gate alias (deprecated)",
+        default="all",
+        help="Phase to validate (default: all)",
     )
     parser.add_argument("--mode", choices=["full", "minimal", "incremental"], default="full")
     parser.add_argument("--json", action="store_true")
@@ -299,77 +232,37 @@ def main() -> int:
     if status_path.exists():
         status = json.loads(status_path.read_text(encoding="utf-8"))
 
-    if args.phase:
-        phases = PHASE_ORDER if args.phase == "all" else [args.phase]
-    elif args.gate:
-        if args.gate == "all":
-            phases = PHASE_ORDER
-        else:
-            phases = GATE_ALIASES[args.gate]
-    else:
-        phases = PHASE_ORDER
+    phases = PHASE_ORDER if args.phase == "all" else [args.phase]
 
     results: dict[str, dict] = {}
     for p in PHASE_ORDER:
         ok, issues = validate_phase(product_dir, p, status, mode=args.mode)
         results[p] = {"pass": ok, "issues": issues}
 
-    # When validating a subset, only expose requested phases in output
-    if args.phase and args.phase != "all":
-        output_results = {args.phase: results[args.phase]}
-    elif args.gate and args.gate != "all":
-        gate_ok, gate_issues = validate_gate_alias(product_dir, args.gate, status, mode=args.mode)
-        output_results = {
-            args.gate: {"pass": gate_ok, "issues": gate_issues},
-            "phases": {p: results[p] for p in GATE_ALIASES[args.gate]},
-        }
-    else:
-        output_results = results
-
     next_cmd = suggest_next_command(results, product_dir).replace("{produto}", args.product)
 
     if args.json:
-        payload: dict = {
+        payload = {
             "phases": results,
             "suggestedNextCommand": next_cmd,
             "productPhase": compute_product_phase(results),
         }
-        if args.gate and args.gate != "all":
-            payload["gates"] = {args.gate: output_results[args.gate]}
-        else:
-            payload["gates"] = {
-                g: validate_gate_alias(product_dir, g, status, mode=args.mode)[0]
-                for g in ("G0", "G1", "G2")
-            }
         print(json.dumps(payload, indent=2, ensure_ascii=False))
     else:
-        for p in (phases if args.gate is None else PHASE_ORDER):
-            if p in results:
-                r = results[p]
-                mark = "PASS" if r["pass"] else "FAIL"
-                print(f"{p} ({PHASES[p]['name']}): {mark}")
-                for i in r["issues"]:
-                    print(f"  - {i}")
-        if args.gate and args.gate != "all":
-            gate_ok, gate_issues = validate_gate_alias(product_dir, args.gate, status, mode=args.mode)
-            mark = "PASS" if gate_ok else "FAIL"
-            print(f"\nLegacy {args.gate}: {mark}")
-            for i in gate_issues:
+        for p in phases:
+            r = results[p]
+            mark = "PASS" if r["pass"] else "FAIL"
+            print(f"{p} ({PHASES[p]['name']}): {mark}")
+            for i in r["issues"]:
                 print(f"  - {i}")
-        if args.suggest or (args.phase is None and args.gate is None):
+        if args.suggest or args.phase == "all":
             print(f"Suggested next: {next_cmd}")
 
-    # Exit code: scoped to requested phase/gate; full suite only for all/default
-    if args.phase and args.phase != "all":
+    if args.phase != "all":
         return 0 if results[args.phase]["pass"] else 1
-    if args.gate and args.gate != "all":
-        gate_ok, _ = validate_gate_alias(product_dir, args.gate, status, mode=args.mode)
-        return 0 if gate_ok else 1
-    all_ok = all(results[p]["pass"] for p in PHASE_ORDER)
-    return 0 if all_ok else 1
+    return 0 if all(results[p]["pass"] for p in PHASE_ORDER) else 1
 
 
-# Backward-compatible aliases for external imports
 validate_gate = validate_phase
 GATES = PHASES
 

@@ -1,13 +1,13 @@
 ---
 name: domain-flow
-description: Um fluxo operacional de negócio (fluxo-NN) — plan mode; detalhe técnico no arch-kit.
+description: Um fluxo operacional de negócio (fluxo-NN) — plan mode; detalhe técnico fora do escopo.
 ---
 
 ## Explain to user
 
 Trabalho **um fluxo operacional** por vez na **camada negócio**: cenário ponta a ponta em linguagem de produto. **Só gravo no hub após seu OK.**
 
-Detalhe técnico (serviços, filas, contratos) é opcional e fica no **arch-kit** (`arch/fluxos/`).
+Detalhe técnico (serviços, filas, contratos) é opcional e fica **fora do escopo do domain-kit** (próxima etapa técnica).
 
 Contrato: [plan-mode.md](../../references/plan-mode.md)
 
@@ -32,10 +32,10 @@ Formato: `{NN}` ou `fluxo-{NN}` + produto opcional.
 2. `flow_deps.py` — se FAIL, listar deps e parar.
 3. **Perguntas inline** — [flow.md](../../templates/clarify/flow.md) se ambíguo (máx. 3/turno).
 4. Wrapper [fluxos-entregaveis.md](../../wrappers/fluxos-entregaveis.md).
-5. Propor MD → `.draft/01-product/03-operacional/fluxos/{NN}-{slug}.md` + preview chat.
+5. Propor MD → `.draft/01-product/04-operacional/fluxos/{NN}-{slug}.md` + preview chat.
 6. Propor updates `flows-registry.yml` / D-n como drafts.
 7. **Aguardar OK** → promote; `flows-registry.yml` status `ready`.
 8. **Changelog** — [changelog.md](../../templates/clarify/changelog.md).
 9. Regenerar dashboard; sugerir próximo fluxo ou `/domain.model --finalize`.
 
-**Legado:** fluxos em `02-capabilities/{bc}/fluxos/` contam para adopt, mas novos fluxos usam `03-operacional/fluxos/`.
+Path canônico: `01-product/04-operacional/fluxos/` — ver [hub-paths.md](../../references/hub-paths.md).

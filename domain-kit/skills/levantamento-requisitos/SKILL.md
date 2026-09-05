@@ -10,6 +10,8 @@ disable-model-invocation: true
 
 # Levantamento de Requisitos
 
+## Purpose
+
 Transforma demanda de negócio em **documento de requisitos** (upstream), com
 riscos, persona, jornada, RF/RNF e **PlantUML** da jornada.
 
@@ -19,7 +21,7 @@ Relacionadas:
 
 - `event-storming` / `event-storming-to-scenario-tables` — processo de domínio
 - `domain-storytelling` — narrativa
-- `ddd-design-tatico` — arquitetura após requisitos claros
+- Design de solução / tático — **fora do escopo do domain-kit** (após requisitos claros)
 - `task-refinement` — refinamento técnico + backlog (depois)
 - `request-for-comments` — decisão de produto controversa
 
@@ -35,6 +37,20 @@ PlantUML: [references/plantuml-conventions.md](references/plantuml-conventions.m
   grooming técnico)
 
 **Não usar** para só quebrar em tarefas Jira (`task-refinement`).
+
+---
+
+## Why decisions
+
+- Riscos Cagan (valor, negócio, usabilidade, técnico) forçam validação antes
+  de backlog — evita “spec que ninguém quer”.
+- Persona + problema + objetivos amarram RF à dor, não a features soltas.
+- Jornada com PlantUML torna o fluxo revisável com PM/UX sem código.
+- RF/RNF no mesmo doc evita NFR esquecido até a véspera do go-live.
+- Upstream: mapear e validar ideias **antes** da execução / task-refinement.
+- Path canônico em `04-operacional/requisitos.md` alinha NFR de produto ao hub.
+- Em `/domain.model` (e demais `domain-*`), o **wrapper vence** a skill se houver
+  conflito de path ou ordem.
 
 ---
 
@@ -58,24 +74,30 @@ PlantUML: [references/plantuml-conventions.md](references/plantuml-conventions.m
 5. Requisitos funcionais  
 6. Requisitos não funcionais  
 
-Upstream: mapear e validar ideias **antes** da execução.
-
 ---
 
-## Artefato (obrigatório)
+## Outputs canônicos
 
-### Onde salvar
+Mapa: [references/hub-paths.md](../../references/hub-paths.md). Em comando
+`domain-*` (incl. `/domain.model`), o **wrapper vence** se houver conflito.
 
-1. Path do usuário.
-2. Hub: `products/{produto}/04-platform/01-non-functional/01-requisitos.md`  
-   (ou `requisitos/` com jornada + RF separados).
+1. Path explícito do usuário (se houver).
+2. Hub:
+
+```text
+products/{produto}/01-product/04-operacional/requisitos.md
+```
+
+   (ou pasta `requisitos/` com jornada + RF separados, ainda sob `04-operacional/`).
+
 3. Fora do hub: `docs/requisitos-<slug>.md`.
 
-Mapa de paths: [references/hub-paths.md](../references/hub-paths.md). Confirmar `{produto}` (e `{bc}` ou `{iniciativa}` quando aplicável) antes da 1ª gravação.
+**Não** inventar path fora de [hub-paths.md](../../references/hub-paths.md). Confirmar `{produto}`
+antes da 1ª gravação. Usar [template.md](template.md).
 
 ---
 
-## Fluxo
+## Workflow
 
 ```
 Progresso:
@@ -91,10 +113,24 @@ Validar PlantUML com MCP **`user-plantuml`**.
 
 ---
 
-## Saída no chat
+## Anti-patterns
 
-1. Path  
+- Pular riscos e ir direto a lista de RF.
+- Misturar design tático / camadas / agregados no doc de requisitos.
+- Criar cards Jira nesta skill (`task-refinement` é depois).
+- Tratar hipóteses de risco como requisitos fechados.
+- Inventar path fora de [hub-paths.md](../../references/hub-paths.md).
+- Ignorar o wrapper em sessão `domain.model` e sobrescrever paths do comando.
+
+---
+
+## Exit
+
+Saída no chat:
+
+1. Path gravado  
 2. Riscos em 4 linhas  
 3. Lista curta de RF + abertos  
+4. Sinalizar `task-refinement` / RFC se houver decisão aberta  
 
 Exemplo: [examples.md](examples.md) (gestão de tarefas colaborativas / CRM).

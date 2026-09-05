@@ -73,5 +73,5 @@ E2 --> EX : alternativa
 ## 6. Próximos passos
 
 - [ ] `event-storming-to-scenario-tables` (comandos/políticas/tabelas)
-- [ ] `ddd-design-tatico` (agregados)
+- [ ] fora do escopo do domain-kit (design de solução / tático) — agregados
 - [ ] Abertos: …

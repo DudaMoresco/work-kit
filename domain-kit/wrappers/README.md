@@ -23,8 +23,6 @@ O agente deve:
 | [event-storming.md](event-storming.md) | `skills/event-storming` | discover, flow |
 | [event-storming-to-scenario-tables.md](event-storming-to-scenario-tables.md) | `skills/event-storming-to-scenario-tables` | discover |
 | [ddd-linguagem-e-contextos.md](ddd-linguagem-e-contextos.md) | `skills/ddd-linguagem-e-contextos` | discover |
-| [ddd-integracao-contextos.md](ddd-integracao-contextos.md) | `skills/ddd-integracao-contextos` (arch) | arch-kit |
-| [ddd-design-tatico.md](ddd-design-tatico.md) | `skills/ddd-design-tatico` (arch) | arch-kit |
 | [levantamento-requisitos.md](levantamento-requisitos.md) | `skills/levantamento-requisitos` | model |
 | [fluxos-entregaveis.md](fluxos-entregaveis.md) | `skills/fluxos-entregaveis` + `fluxogramas-decisao` | flow, discover as-is |
 | [scan-github.md](scan-github.md) | MCP user-github | init, scan |

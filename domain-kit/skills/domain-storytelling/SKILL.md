@@ -21,7 +21,7 @@ Relacionadas (não substituem esta skill):
 
 - `ddd-design-estrategico` — domínio/subdomínios (antes ou em paralelo)
 - `ddd-linguagem-e-contextos` — dicionário UL e BCs (glossário desta skill alimenta)
-- `ddd-integracao-contextos` — mapa de integração entre BCs
+- fora do escopo do domain-kit (design de solução / tático) — mapa de integração entre BCs
 - `event-storming` — tempestade de eventos
 - `event-storming-to-scenario-tables` — eventos/comandos tabulares
 - `fluxogramas-decisao` — árvores de regra as-is
@@ -40,6 +40,21 @@ PlantUML: [references/plantuml-conventions.md](references/plantuml-conventions.m
 **Não usar** para classificar subdomínios (`ddd-design-estrategico`),
 dicionário completo de UL / bounded contexts (`ddd-linguagem-e-contextos`)
 nem inventário de eventos de ES.
+
+---
+
+## Why decisions
+
+- Uma história = um cenário + um escopo — jornadas misturadas viram novela ilegível.
+- Termos da UL saem da própria story (substantivos/verbos), não de glossário inventado.
+- Clareza ator / objeto de trabalho / atividade numerada torna a narrativa revisável
+  com Domain Experts sem código.
+- Glossário de **sessão** fica junto da story; o dicionário canônico vive em
+  `02-domain/linguagem-ubiqua.md` (`ddd-linguagem-e-contextos`).
+- Escopo nos 3 eixos (granularidade, as-is/to-be, pureza) evita misturar “hoje”
+  com “desejado” no mesmo diagrama.
+- Path sob `03-discovery/02-domain-storytelling/` separa exploração de fluxos
+  to-be em `04-operacional/`.
 
 ---
 
@@ -139,7 +154,7 @@ Escrever Markdown no disco — não só colar no chat.
 ### Onde salvar
 
 1. Path do usuário → usar.
-2. No `architecture-hub` (ou layout equivalente):
+2. No hub do produto (ou layout equivalente):
 
 ```text
 products/{produto}/01-product/03-discovery/02-domain-storytelling/
@@ -154,7 +169,7 @@ Confirmar path na primeira gravação se ainda não estiver claro.
 
 Usar [template.md](template.md).
 
-Mapa de paths: [references/hub-paths.md](../references/hub-paths.md). Confirmar `{produto}` (e `{bc}` ou `{iniciativa}` quando aplicável) antes da 1ª gravação.
+Mapa de paths: [references/hub-paths.md](../../references/hub-paths.md). Confirmar `{produto}` (e `{bc}` ou `{iniciativa}` quando aplicável) antes da 1ª gravação.
 
 ---
 
@@ -221,6 +236,19 @@ cenários faltantes, conflitos de linguagem entre departamentos.
 
 Se houver ambíguos/sinônimos ou vários departamentos com o mesmo rótulo,
 encaminhar para `ddd-linguagem-e-contextos` (dicionário UL + BCs).
+
+---
+
+## Anti-patterns
+
+- Escrever novela em prosa sem estrutura pictográfica (ator → atividade → objeto,
+  numerada).
+- Duplicar o dicionário canônico UL no glossário da sessão (sessão ≠
+  `02-domain/linguagem-ubiqua.md`).
+- Várias jornadas / escopos no mesmo arquivo sem declarar versão.
+- Rotular atores por nome próprio em vez de papel de negócio.
+- Escopo “puro” cheio de sistemas sem reclassificar ou extrair versão digitalizada.
+- Gravar sob `04-operacional/fluxos/` — isso é fluxo to-be, não story.
 
 ---
 

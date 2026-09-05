@@ -19,7 +19,7 @@ $ARGUMENTS
 
 1. Alocar próximo D-n.
 2. Capturar: capability, tema, status, texto, evidência.
-3. Draft append em `.draft/03-registry/produto.md` (ou patch preview).
+3. Draft append em `.draft/05-decisoes/produto.md` (ou patch preview).
 4. Preview markdown no chat.
 5. **Aguardar OK** → promote / merge em registry canônico.
 6. **Changelog** — [changelog.md](../../templates/clarify/changelog.md) → append em `CHANGELOG.md`; exibir no checkpoint.

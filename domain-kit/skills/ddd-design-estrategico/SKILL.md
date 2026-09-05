@@ -20,7 +20,7 @@ repositories, etc.).
 Relacionadas (não substituem esta skill):
 
 - `ddd-linguagem-e-contextos` — linguagem ubíqua e bounded contexts (**subdomínio ≠ BC**)
-- `ddd-integracao-contextos` — Conformista / ACL entre BCs
+- fora do escopo do domain-kit (design de solução / tático) — Conformista / ACL entre BCs
 - `domain-storytelling` — narrativas após o mapa estratégico
 - `event-storming` — tempestade de eventos
 - `event-storming-to-scenario-tables` — depois do mapa estratégico
@@ -44,6 +44,22 @@ acima (`ddd-linguagem-e-contextos` para UL/BC).
 
 **Nota:** classificação de subdomínios **não** define sozinha Contextos
 Delimitados. Após o mapa estratégico, preferir `ddd-linguagem-e-contextos`.
+
+---
+
+## Why decisions
+
+- Poucos Core (idealmente 1; mais de 2 exige justificativa forte) — evita diluir
+  o diferencial competitivo no mapa.
+- Evidência (falada / fontes) sobre opinião: hipótese fica marcada, não vira fato.
+- Critérios explícitos Supporting vs Generic (apoia o Core vs comum de mercado)
+  reduzem classificação por “complexidade” ou nome de sistema.
+- Nomes de **negócio**, não de tecnologia — o mapa estratégico não é inventário
+  de serviços.
+- Subdomínio ≠ BC: esta skill para no mapa de domínio; fronteiras de linguagem
+  ficam em `ddd-linguagem-e-contextos`.
+- Path em `01-vision/01-design-estrategico.md` separa visão estratégica de
+  discovery e operacional.
 
 ---
 
@@ -115,7 +131,7 @@ Escrever arquivo Markdown no disco — não só colar no chat.
 ### Onde salvar
 
 1. Path indicado pelo usuário → usar.
-2. No `architecture-hub` (ou layout equivalente):
+2. No hub do produto (ou layout equivalente):
 
 ```text
 products/{produto}/01-product/01-vision/01-design-estrategico.md
@@ -129,7 +145,7 @@ Depois, informar o caminho do arquivo.
 
 Usar a estrutura de [template.md](template.md).
 
-Mapa de paths: [references/hub-paths.md](../references/hub-paths.md). Confirmar `{produto}` (e `{bc}` ou `{iniciativa}` quando aplicável) antes da 1ª gravação.
+Mapa de paths: [references/hub-paths.md](../../references/hub-paths.md). Confirmar `{produto}` (e `{bc}` ou `{iniciativa}` quando aplicável) antes da 1ª gravação.
 
 ---
 
@@ -204,6 +220,17 @@ Convenções: [references/plantuml-conventions.md](references/plantuml-conventio
 
 Gravar seguindo [template.md](template.md). Seção final: hipóteses,
 ambiguidades e perguntas para Domain Experts.
+
+---
+
+## Anti-patterns
+
+- Inventar subdomínios sem evidência na narrativa / fontes do usuário.
+- Misturar design de solução (agregados, ACL, filas, camadas) no mapa estratégico.
+- Classificar como Core só porque o módulo é “grande” ou complexo.
+- Forçar 1:1 subdomínio ↔ Bounded Context nesta skill.
+- Usar nomes técnicos (`SchoolService`, `BillingAPI`) como rótulos de subdomínio.
+- Tratar Genérico como “fácil” — pode ser complexo e ainda ser genérico.
 
 ---
 

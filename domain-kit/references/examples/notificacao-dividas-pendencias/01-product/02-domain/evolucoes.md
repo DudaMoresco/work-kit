@@ -18,5 +18,5 @@
 ## Referências
 
 - Problemas/lacunas: [`abertos.md`](abertos.md)
-- Decisões: [`../../03-registry/produto.md`](../../03-registry/produto.md)
+- Decisões: [`../../05-decisoes/produto.md`](../../05-decisoes/produto.md)
 - Cartão do produto: [`../../product-README.md`](../../product-README.md)

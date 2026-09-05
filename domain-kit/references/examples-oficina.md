@@ -62,15 +62,13 @@ Origem de decisões como D-13 (orçar só disponível; resto via complementar).
 | `linguagem-ubiqua.md` | OS, Orçamento, Reserva, Baixa, Item… |
 | `bounded-contexts.md` | 5 BCs nomeados |
 
-**Gate G1:** passou — BCs fechados, discovery rico.
+**Fase Estratégico + Descoberta:** PASS — BCs fechados, discovery rico.
 
 ---
 
 ## `/domain.model` — o que foi produzido
 
-### 1. Integração entre BCs
-
-**Arquivo:** `01-product/04-integration/01-contextos.md`
+### 1. Integração entre BCs (mapa de negócio)
 
 Decisão estrutural **D-16:**
 
@@ -79,65 +77,57 @@ Orçamento NÃO chama Estoque diretamente.
 OS orquestra: aprovação → Reservar → retirada → Baixar → Liberar.
 ```
 
-Sem este doc, o design tático de cada BC fica inconsistente.
+Sem este alinhamento, o design de cada BC fica inconsistente. Detalhe técnico de ACL/protocolos fica **fora do escopo do domain-kit**.
 
 ### 2. Requisitos
 
-**Arquivo:** `04-platform/01-non-functional/01-requisitos.md`
+**Arquivo:** `01-product/04-operacional/requisitos.md`
 
 RF/RNF derivados dos fluxos e enunciado (inclui D-36 observabilidade depois).
 
-Owned pelo domain-kit na fase model; arch-kit **linka**, não reescreve.
+Owned pelo domain-kit na fase Operacional.
 
 ### 3. Design tático por BC
 
-**Pasta:** `02-capabilities/{bc}/design-tatico.md`
-
-| BC | Agregado raiz | Decisões ligadas |
-| --- | --- | --- |
-| ordem-de-servico | OrdemDeServico | D-01…D-08, D-16, D-32 |
-| orcamento | Orcamento | D-02, D-07, D-10, D-11 |
-| estoque | ItemEstoque | D-09, D-12, D-14 |
-| cadastros | (entidades CRUD) | D-20 packaging |
-| acesso | — | D-06, D-27 |
+Design tático por BC fica **fora do escopo do domain-kit** (próxima etapa técnica). Neste exemplo histórico, havia notas por BC (ordem-de-servico, orcamento, estoque, cadastros, acesso) ligadas a decisões D-n — úteis como referência de negócio, não como entrega deste kit.
 
 ### 4. Fluxos entregáveis (7)
+
+Path: `01-product/04-operacional/fluxos/{NN}-{slug}.md`.
 
 Distribuídos por BC, numerados **01–07** para rastreio:
 
 | fluxo | BC principal | Arquivo |
 | --- | --- | --- |
-| 01 | ordem-de-servico | `fluxos/01-identificacao-e-abertura-os.md` |
-| 02 | orcamento | `fluxos/02-orcamento-inicial.md` |
-| 03 | orcamento | `fluxos/03-decisao-orcamento.md` |
-| 04 | estoque | `fluxos/04-retirada-e-baixa.md` |
-| 05 | ordem-de-servico | `fluxos/05-aguardando-item.md` |
-| 06 | orcamento | `fluxos/06-orcamento-complementar.md` |
-| 07 | ordem-de-servico | `fluxos/07-finalizar-e-entregar.md` |
+| 01 | ordem-de-servico | `01-product/04-operacional/fluxos/01-identificacao-e-abertura-os.md` |
+| 02 | orcamento | `01-product/04-operacional/fluxos/02-orcamento-inicial.md` |
+| 03 | orcamento | `01-product/04-operacional/fluxos/03-decisao-orcamento.md` |
+| 04 | estoque | `01-product/04-operacional/fluxos/04-retirada-e-baixa.md` |
+| 05 | ordem-de-servico | `01-product/04-operacional/fluxos/05-aguardando-item.md` |
+| 06 | orcamento | `01-product/04-operacional/fluxos/06-orcamento-complementar.md` |
+| 07 | ordem-de-servico | `01-product/04-operacional/fluxos/07-finalizar-e-entregar.md` |
 
-Estes 7 fluxos viraram, depois, **stories #11–#17** na delivery-kit (1:1).
+IDs estáveis `fluxo-01`…`fluxo-07` facilitam rastreio em etapas posteriores (fora deste kit).
 
-### 5. Orquestração
+### 5. Orquestração de negócio
 
-**Arquivo:** `02-capabilities/ordem-de-servico/fluxos-aplicacao.md`
-
-Use cases que **coordenam** BCs (application layer) — ex.: “Abrir OS”, “Executar fluxo 02”.
+Coordenação entre BCs (ex.: “Abrir OS”, “Executar fluxo 02”) fica descrita nos próprios fluxos e em D-n — não em pasta técnica.
 
 ### 6. Registry produto
 
-**Arquivo:** `03-registry/produto.md`
+**Arquivo:** `05-decisoes/produto.md`
 
 33 decisões D-01…D-33, cada uma com:
 - capability
 - status (`aceita`)
 - texto da decisão
-- **link** para evidência (fluxo, ES, tático)
+- **link** para evidência (fluxo, ES, discovery)
 
 Exemplo **D-03** (bloquear OS duplicada para mesmo veículo):
-- Evidência: `02-capabilities/ordem-de-servico/`
+- Evidência: `01-product/04-operacional/fluxos/` / discovery do BC ordem-de-servico
 - Impacto: invariante no agregado OrdemDeServico
 
-**Gate G2:** passou em 2026-08-23 → arch-kit iniciou (`rota-decisao.md`).
+**Fase Operacional:** passou em 2026-08-23 — fim do pipeline domain-kit neste exemplo.
 
 ---
 
@@ -151,19 +141,13 @@ ENUNCIADO
     │   domain-stories (×6)                          │
     │   event-storming (×5)                          │
     │   UL + BCs (×5)                                │
-    │                    G1 ✓                        │
+    │                    Estratégico+Descoberta ✓    │
     ├─ model ────────────────────────────────────────┤
-    │   integração (D-16 ACL)                        │
     │   requisitos RF/RNF                            │
-    │   design-tatico (×5 BC)                        │
     │   fluxos 01–07                                 │
-    │   fluxos-aplicacao                             │
     │   registry D-01…33                             │
-    │                    G2 ✓                        │
+    │                    Operacional ✓               │
     └────────────────────────────────────────────────┘
-                         │
-                         ▼
-                    arch-kit (estilo, C4, ADR…)
 ```
 
 ---
@@ -172,22 +156,23 @@ ENUNCIADO
 
 1. **ES em workshops pequenos** — mais fácil de manter que 1 diagrama gigante.
 2. **D-n cedo** — toda regra polêmica vira linha no registry com link.
-3. **Integração antes do tático** — D-16 evitou acoplamento Orçamento↔Estoque no código.
-4. **Numerar fluxos 01–NN** — IDs estáveis até spec-kit (`fluxo-01` → story-11 → spec-011).
-5. **Requisitos em platform/** — ok; domain-kit “entrega” lá na fase model.
+3. **Alinhar integração de negócio antes do detalhe técnico** — D-16 evitou acoplamento Orçamento↔Estoque.
+4. **Numerar fluxos 01–NN** — IDs estáveis para rastreio (`fluxo-01`, …).
+5. **Requisitos em `04-operacional/requisitos.md`** — domain-kit entrega NFR na fase Operacional.
 
 ---
 
 ## Se refizesse com domain-kit desde o zero
 
-Ordem sugerida pelo framework (igual ao que aconteceu na prática):
+Ordem sugerida pelo kit (igual ao que aconteceu na prática):
 
 ```bash
-/domain.install oficina-mecanica
+/domain.install
+# install: domain-kit/scripts/install-domain-kit.sh /caminho/do/hub
 /domain.init oficina-mecanica --initiative tech-challenge-fase1
 /domain.discover oficina-mecanica
-/domain.model oficina-mecanica
-# → H2 → /arch.route
+/domain.model oficina-mecanica --finalize
+# → Operacional PASS — fim do domain-kit
 ```
 
 Tempo estimado humano+agente: 2–4 sessões de chat para MVP rico como a oficina.

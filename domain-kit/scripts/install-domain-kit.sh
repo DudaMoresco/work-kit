@@ -58,7 +58,6 @@ PY
 
 # Meta + macro + micro commands
 install_command_skill "domain-install" "domain-install"
-install_command_skill "workkit-init" "workkit-init"  # deprecated alias
 for cmd in init scan clarify status discover model flow capability decision change; do
   install_command_skill "${cmd}" "domain-${cmd}"
 done
@@ -73,6 +72,12 @@ cp "${KIT_ROOT}/scripts/regenerate_dashboard.sh" "${DOMAIN_DIR}/scripts/"
 cp "${KIT_ROOT}/scripts/start_plantuml_server.sh" "${DOMAIN_DIR}/scripts/"
 cp "${KIT_ROOT}/scripts/start_dashboard_server.sh" "${DOMAIN_DIR}/scripts/" 2>/dev/null || true
 cp "${KIT_ROOT}/scripts/requirements.txt" "${DOMAIN_DIR}/scripts/" 2>/dev/null || true
+# Dashboard HTML/CSS/JS templates (editáveis; sync → dashboard-assets/ na regeneração)
+rm -rf "${DOMAIN_DIR}/scripts/dashboard" "${DOMAIN_DIR}/scripts/vendor"
+cp -R "${KIT_ROOT}/scripts/dashboard" "${DOMAIN_DIR}/scripts/dashboard"
+if [[ -d "${KIT_ROOT}/scripts/vendor" ]]; then
+  cp -R "${KIT_ROOT}/scripts/vendor" "${DOMAIN_DIR}/scripts/vendor"
+fi
 chmod +x "${DOMAIN_DIR}/scripts/"*.py "${DOMAIN_DIR}/scripts/"*.sh 2>/dev/null || true
 
 cp "${KIT_ROOT}/templates/config.yml" "${DOMAIN_DIR}/config.yml"
@@ -114,7 +119,6 @@ echo "  .domain/wrappers/   # contratos de path/fase"
 echo "  .domain/scripts/regenerate_dashboard.sh products/{produto}"
 echo "  .domain/scripts/start_plantuml_server.sh  # PlantUML preview (porta 8765)"
 echo "  Commands: /domain.install (done), /domain.init, /domain.scan, /domain.change, ..."
-echo "  Deprecated alias: /workkit.init"
 echo "  Docs: ${KIT_ROOT}/GUIDE.md"
 echo ""
 echo "Kit autossuficiente: skills DDD estão em .domain/skills/ (não usa ~/.cursor/skills)."

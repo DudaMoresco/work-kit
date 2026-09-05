@@ -3,7 +3,7 @@
 > Gerado em 2026-09-03 via `/domain.discover --stage contexts` (modo as-is-first).
 > Decisão L02: dois BCs — Orquestração + Entrega.
 
-> Detalhe técnico de integração (ACL, protocolos, filas): [`arch/01-integration/01-contextos.md`](../../arch/01-integration/01-contextos.md).
+> Detalhe técnico de integração (ACL, protocolos, filas): fora do escopo do domain-kit (`arch/` opcional, nunca gated).
 
 ## Visão geral
 
@@ -166,5 +166,5 @@ flowchart LR
 
 - `01-product/01-vision/01-design-estrategico.md` (seção 6–7)
 - `01-product/02-domain/linguagem-ubiqua.md`
-- `arch/01-integration/01-contextos.md` — integração técnica (arch-kit)
+- Integração técnica — fora do escopo do domain-kit (`arch/` opcional)
 - `01-product/03-discovery/00-as-is/fluxo-notificacao-prd-datadog.md`

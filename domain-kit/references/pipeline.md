@@ -1,6 +1,6 @@
 # Pipeline do domain-kit
 
-Fases **Evidências → Estratégico → Descoberta → Operacional** → handoff arch-kit.
+Fases **Evidências → Estratégico → Descoberta → Operacional**. O pipeline do domain-kit termina em **Operacional**. Detalhe técnico (design tático, integração, C4) fica **fora do escopo do domain-kit**.
 
 Placeholders: `{produto}`, `{bc}`, `{iniciativa}`.
 
@@ -17,7 +17,7 @@ Guia: [`../COMMAND-GUIDE.md`](../COMMAND-GUIDE.md) · Estágios: [`discovery-wor
 | Macro | `domain.discover`, `domain.model` |
 | Micro | `domain.flow`, `domain.decision` |
 
-~~`domain.capability`~~ → arch-kit.
+`domain.capability` — **fora do escopo do domain-kit** (próxima etapa técnica).
 
 ---
 
@@ -48,7 +48,7 @@ flowchart TB
     S3[UL + BCs]
   end
   subgraph operacional ["/domain.flow + model"]
-    FL[Fluxos 03-operacional]
+    FL[Fluxos 04-operacional]
     NFR[NFRs produto]
     REG[Registry D-n]
   end
@@ -67,7 +67,6 @@ flowchart TB
   FL --> NFR
   NFR --> REG
   REG --> OP[Operacional PASS]
-  OP --> ARCH["/arch.route"]
 ```
 
 ---
@@ -79,8 +78,9 @@ flowchart TB
 | Evidências | `sources.yml`, `00-scan/`, `sintese-evidencias.md`, `product-README.md` (stub) |
 | Estratégico | `01-design-estrategico.md`, `desafio-negocio.md`, `bounded-contexts.md`, `linguagem-ubiqua.md` |
 | Descoberta | `03-discovery/01-event-storming/`, `02-domain-storytelling/`, `abertos.md` |
-| Operacional | `03-operacional/fluxos/`, `flows-registry.yml`, `01-requisitos.md`, `03-registry/produto.md` |
-| Arch (fora) | `arch/{bc}/design-tatico.md`, `arch/01-integration/`, `arch/fluxos/` |
+| Operacional | `04-operacional/fluxos/`, `flows-registry.yml`, `requisitos.md`, `05-decisoes/produto.md` |
+
+Fora do escopo do domain-kit: design tático, integração técnica, fluxos técnicos (próxima etapa técnica).
 
 ---
 
@@ -88,9 +88,9 @@ flowchart TB
 
 | Camada | Path |
 | --- | --- |
-| **Negócio (domain-kit)** | `products/{p}/01-product/03-operacional/fluxos/{NN}-{slug}.md` |
-| **Técnica (arch-kit)** | `products/{p}/arch/fluxos/{NN}-{slug}-tecnico.md` |
-| Legado | `02-capabilities/{bc}/fluxos/` — só adopt/migração |
+| **Negócio (domain-kit)** | `products/{p}/01-product/04-operacional/fluxos/{NN}-{slug}.md` |
+
+Fluxos de negócio: `01-product/04-operacional/fluxos/`. Mapa: [hub-paths.md](hub-paths.md).
 
 Wrapper autoridade: [`../wrappers/fluxos-entregaveis.md`](../wrappers/fluxos-entregaveis.md).
 
@@ -101,5 +101,4 @@ Wrapper autoridade: [`../wrappers/fluxos-entregaveis.md`](../wrappers/fluxos-ent
 ```bash
 .domain/scripts/validate_gate.py --phase evidencias --product {p}
 .domain/scripts/validate_gate.py --phase operacional --product {p} --suggest
-# aliases: --gate G0|G1|G2
 ```

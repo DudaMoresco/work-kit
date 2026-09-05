@@ -8,7 +8,7 @@ Referências:
 - Comandos: [`../COMMAND-GUIDE.md`](../COMMAND-GUIDE.md) · [`../SKILL.md`](../SKILL.md)
 - Skills bundled: [`../skills/README.md`](../skills/README.md)
 
-O domain-kit cobre **Evidências → Estratégico → Descoberta → Operacional**. Design tático e integração técnica → **arch-kit** após Operacional PASS.
+O domain-kit cobre **Evidências → Estratégico → Descoberta → Operacional**. Design tático e integração técnica ficam **fora do escopo do domain-kit** (próxima etapa técnica após Operacional PASS).
 
 ---
 
@@ -24,7 +24,6 @@ O domain-kit cobre **Evidências → Estratégico → Descoberta → Operacional
 | 5 | — | cenários (opcional) | skill `event-storming-to-scenario-tables` |
 | 6 | Operacional | fluxos negócio | `/domain.flow {NN}` |
 | 7 | Operacional | NFR + finalize | `/domain.model --finalize` |
-| 8 | Arch | tático / integração | `/arch.route` · `/arch.capability` |
 
 Ordem sugerida em `full`: 0b lacunas → estratégico → contexts → stories → event-storming → fluxos → finalize.
 
@@ -33,7 +32,6 @@ flowchart LR
   EV[Evidências] --> EST[Estratégico]
   EST --> DES[Descoberta]
   DES --> OP[Operacional]
-  OP --> ARCH[arch-kit]
 ```
 
 ---
@@ -70,7 +68,7 @@ Não entrega BCs, stories nem fluxos.
 | **Artefatos** | `desafio-negocio.md`, `linguagem-ubiqua.md`, `bounded-contexts.md` |
 | **PASS** | `validate_gate.py --phase estrategico` |
 
-`bounded-contexts.md`: mapa em **linguagem de negócio**. Sem ACL/filas — detalhe em `arch/01-integration/`.
+`bounded-contexts.md`: mapa em **linguagem de negócio**. Sem ACL/filas — detalhe técnico fica fora do escopo do domain-kit.
 
 Após contexts promovido: refresh `product-README.md`.
 
@@ -100,8 +98,6 @@ Após contexts promovido: refresh `product-README.md`.
 
 Modo `minimal`: Descoberta pode ser relaxada (ver `gates.yml`).
 
-Alias legado **G1** = Estratégico + Descoberta.
-
 ---
 
 ## Fase Operacional
@@ -111,39 +107,37 @@ Alias legado **G1** = Estratégico + Descoberta.
 | | |
 | --- | --- |
 | **Pergunta** | Quais cenários ponta a ponta o produto deve garantir? |
-| **Path** | `01-product/03-operacional/fluxos/{NN}-{slug}.md` |
+| **Path** | `01-product/04-operacional/fluxos/{NN}-{slug}.md` |
 | **Template** | `templates/fluxo-operacional.md` |
 | **Know-how** | `skills/fluxos-entregaveis` (paths: **ver wrapper**) |
 | **Registry** | `flows-registry.yml` → `status: ready` |
 
-Detalhe técnico (serviços, filas) → `arch/fluxos/` (arch-kit).
+Detalhe técnico (serviços, filas) — **fora do escopo do domain-kit** (próxima etapa técnica).
 
 ### Decisões e NFRs
 
 | | |
 | --- | --- |
-| `/domain.decision` | Linha D-n em `03-registry/produto.md` |
-| `/domain.model` | NFRs em `04-platform/01-non-functional/01-requisitos.md` |
-| `/domain.model --finalize` | Valida Operacional → sugere `/arch.route` |
+| `/domain.decision` | Linha D-n em `05-decisoes/produto.md` |
+| `/domain.model` | NFRs em `01-product/04-operacional/requisitos.md` |
+| `/domain.model --finalize` | Valida Operacional — fim do pipeline domain-kit |
 
 **PASS:** `validate_gate.py --phase operacional`  
 Requer: NFR + registry + ≥1 fluxo ready. **Não** requer tático nem integração.
 
-Alias legado **G2** = Operacional.
-
 ---
 
-## Fora do domain-kit (arch)
+## Fora do escopo do domain-kit
 
-| Tema | Onde |
+| Tema | Nota |
 | --- | --- |
-| Design tático | `arch/{bc}/design-tatico.md` · skill `ddd-design-tatico` |
-| Integração ACL/protocolos | `arch/01-integration/01-contextos.md` |
-| Fluxos técnicos | `arch/fluxos/` |
+| Design tático | Próxima etapa técnica (fora deste kit) |
+| Integração ACL/protocolos | Próxima etapa técnica (fora deste kit) |
+| Fluxos técnicos | Próxima etapa técnica (fora deste kit) |
 
-`/domain.capability` está **deprecated**.
+`/domain.capability` não faz parte do pipeline domain-kit.
 
-Stub legado: `01-product/04-integration/01-contextos.md` → redirect para `arch/`.
+Stub em `01-product/04-integration/01-contextos.md` aponta para detalhe técnico fora deste kit, se existir.
 
 ---
 
@@ -153,7 +147,7 @@ Stub legado: `01-product/04-integration/01-contextos.md` → redirect para `arch
 | --- | --- | --- |
 | P-n | `02-domain/abertos.md` | `/domain.change --kind problem-new\|problem` |
 | E-n | `02-domain/evolucoes.md` | `/domain.change --kind evolution` |
-| D-n | `03-registry/produto.md` | `/domain.decision` |
+| D-n | `05-decisoes/produto.md` | `/domain.decision` |
 
 Ritual: [../templates/clarify/evolucao.md](../templates/clarify/evolucao.md).
 
@@ -183,7 +177,7 @@ Estratégico + Descoberta PASS?
   → /domain.flow 01 …
 
 Operacional quase pronto?
-  → /domain.model --finalize → /arch.route
+  → /domain.model --finalize
 
 Algo mudou depois?
   → /domain.change

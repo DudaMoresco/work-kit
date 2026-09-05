@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Adopt an existing product in architecture-hub — generate missing indices and gap report."""
+"""Adopt an existing product in the hub — generate missing indices and gap report."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -47,7 +48,7 @@ def ensure_indices(product_dir: Path, kit_root: Path, product: str, initiative: 
         dst.write_text(text, encoding="utf-8")
         created.append(str(dst.relative_to(product_dir)))
 
-    registry = product_dir / "03-registry" / "produto.md"
+    registry = product_dir / "05-decisoes" / "produto.md"
     if not registry.exists():
         registry.parent.mkdir(parents=True, exist_ok=True)
         registry.write_text(
@@ -58,7 +59,7 @@ def ensure_indices(product_dir: Path, kit_root: Path, product: str, initiative: 
         )
         created.append(str(registry.relative_to(product_dir)))
 
-    op_fluxos = product_dir / "01-product/03-operacional/fluxos"
+    op_fluxos = product_dir / "01-product/04-operacional/fluxos"
     if not op_fluxos.is_dir():
         op_fluxos.mkdir(parents=True, exist_ok=True)
         created.append(str(op_fluxos.relative_to(product_dir)))
@@ -95,21 +96,15 @@ def infer_initiative(hub: Path, product_dir: Path) -> str:
     return ""
 
 
-def detect_arch_legacy(product_dir: Path) -> dict:
-    """Mark design-tatico and integration docs adopted by arch-kit without blocking domain phases."""
+def detect_tactical_docs(product_dir: Path) -> dict:
+    """Note out-of-scope arch docs if present (informational only)."""
     arch: dict = {"capabilitiesAdopted": [], "integrationAdopted": False}
-    cap_root = product_dir / "02-capabilities"
-    if cap_root.is_dir():
-        for bc_dir in sorted(cap_root.iterdir()):
-            if bc_dir.is_dir() and (bc_dir / "design-tatico.md").is_file():
-                arch["capabilitiesAdopted"].append(bc_dir.name)
     arch_path = product_dir / "arch/01-integration/01-contextos.md"
-    legacy_path = product_dir / "01-product/04-integration/01-contextos.md"
     if arch_path.is_file():
         arch["integrationAdopted"] = True
-    elif legacy_path.is_file() and "arch-kit" not in legacy_path.read_text(encoding="utf-8")[:200]:
-        # Legacy full integration doc still at old path — migrate hint only
-        arch["integrationLegacyPath"] = str(legacy_path.relative_to(product_dir))
+    for bc_dir in sorted((product_dir / "arch").iterdir()) if (product_dir / "arch").is_dir() else []:
+        if bc_dir.is_dir() and (bc_dir / "design-tatico.md").is_file():
+            arch["capabilitiesAdopted"].append(bc_dir.name)
     return arch
 
 
@@ -146,18 +141,10 @@ def update_status_from_phases(product_dir: Path, hub: Path, product: str) -> dic
     status["adoptedAt"] = datetime.now(timezone.utc).isoformat()
     status["phases"] = phases_pass
     status["phaseIssues"] = phase_issues
-    status["gates"] = {
-        "G0": phases_pass.get("evidencias", False),
-        "G1": phases_pass.get("estrategico", False) and phases_pass.get("descoberta", False),
-        "G2": phases_pass.get("operacional", False),
-    }
-    status["gateIssues"] = {
-        "G0": phase_issues.get("evidencias", []),
-        "G1": phase_issues.get("estrategico", []) + phase_issues.get("descoberta", []),
-        "G2": phase_issues.get("operacional", []),
-    }
+    status.pop("gates", None)
+    status.pop("gateIssues", None)
 
-    arch = detect_arch_legacy(product_dir)
+    arch = detect_tactical_docs(product_dir)
     status.setdefault("arch", {}).update(arch)
 
     if phases_pass.get("operacional"):
@@ -186,19 +173,13 @@ def suggest_next_command(status: dict) -> str:
 
 
 def inventory_existing(product_dir: Path) -> dict:
-    inv: dict = {"paths": [], "capabilities": [], "fluxos": 0, "arch": []}
+    inv: dict = {"paths": [], "fluxos": 0, "arch": []}
     for p in sorted(product_dir.rglob("*")):
         if p.is_file() and ".draft" not in p.parts:
             rel = str(p.relative_to(product_dir))
             inv["paths"].append(rel)
-    cap_root = product_dir / "02-capabilities"
-    if cap_root.is_dir():
-        inv["capabilities"] = [
-            d.name for d in cap_root.iterdir() if d.is_dir() and not d.name.startswith(".")
-        ]
-    op_dir = product_dir / "01-product/03-operacional/fluxos"
+    op_dir = product_dir / "01-product/04-operacional/fluxos"
     inv["fluxos"] = len(list(op_dir.glob("*.md"))) if op_dir.is_dir() else 0
-    inv["fluxos"] += len(list(cap_root.rglob("fluxos/*.md"))) if cap_root.is_dir() else 0
     arch_root = product_dir / "arch"
     if arch_root.is_dir():
         inv["arch"] = [str(p.relative_to(product_dir)) for p in arch_root.rglob("*.md")]
@@ -222,16 +203,20 @@ def main() -> int:
 
     kit_root = args.kit_root
     if kit_root is None:
-        cfg = hub / ".domain" / "config.yml"
-        if cfg.exists() and "skills_pack:" in cfg.read_text(encoding="utf-8"):
-            for line in cfg.read_text(encoding="utf-8").splitlines():
-                if line.strip().startswith("skills_pack:"):
-                    rel = line.split(":", 1)[1].strip()
-                    kit_root = (hub / rel).resolve() if not Path(rel).is_absolute() else Path(rel)
-                    break
+        env = os.environ.get("DOMAIN_KIT_ROOT")
+        if env:
+            candidate = Path(env).expanduser().resolve()
+            if candidate.is_dir():
+                kit_root = candidate
+        if kit_root is None:
+            cfg = hub / ".domain" / "config.yml"
+            if cfg.exists() and "skills_pack:" in cfg.read_text(encoding="utf-8"):
+                for line in cfg.read_text(encoding="utf-8").splitlines():
+                    if line.strip().startswith("skills_pack:"):
+                        rel = line.split(":", 1)[1].strip()
+                        kit_root = (hub / rel).resolve() if not Path(rel).is_absolute() else Path(rel)
+                        break
         if kit_root is None or not kit_root.is_dir():
-            kit_root = hub.parent / "work-kit" / "domain-kit"
-        if not kit_root.is_dir():
             kit_root = Path(__file__).resolve().parent.parent
 
     initiative = args.initiative or infer_initiative(hub, product_dir)
@@ -247,8 +232,6 @@ def main() -> int:
         "inventory": inventory,
         "phases": status.get("phases"),
         "phaseIssues": status.get("phaseIssues"),
-        "gates": status.get("gates"),
-        "gateIssues": status.get("gateIssues"),
         "arch": status.get("arch"),
         "suggestedNextCommand": next_cmd.replace("{produto}", args.product),
         "phase": status.get("phase"),
@@ -264,10 +247,10 @@ def main() -> int:
                 print(f"  + {c}")
         else:
             print("Indices: all present")
-        print(f"Capabilities (arch legacy): {', '.join(inventory['capabilities']) or '(none)'}")
+        print(f"Out-of-scope arch notes: {status.get('arch') or '(none)'}")
         print(f"Fluxos found: {inventory['fluxos']}")
         if inventory.get("arch"):
-            print(f"Arch artifacts: {len(inventory['arch'])}")
+            print(f"Out-of-scope artifacts: {len(inventory['arch'])}")
         for p in PHASE_ORDER:
             ok = status.get("phases", {}).get(p, False)
             print(f"{p}: {'PASS' if ok else 'FAIL'}")

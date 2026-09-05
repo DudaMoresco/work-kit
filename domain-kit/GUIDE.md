@@ -1,6 +1,6 @@
 # Domain-Kit — Guia do usuário
 
-Framework para mapear **negócio e domínio** no `architecture-hub`, antes da arquitetura técnica (arch-kit) e do código (spec-kit).
+Framework para mapear **negócio e domínio** em um hub de produtos, até a fase **Operacional**. Design de solução e implementação ficam **fora do escopo do domain-kit**.
 
 Idioma dos artefatos: **pt-BR**.
 
@@ -30,9 +30,6 @@ Detalhe: [references/plan-mode.md](references/plan-mode.md)
 | **Estratégico** | Por quê? Onde? Como falamos? | `/domain.discover --stage strategic\|contexts` |
 | **Descoberta** | Como se comporta no tempo? | `/domain.discover --stage stories\|event-storming` |
 | **Operacional** | Quais cenários garantir? | `/domain.flow`, `/domain.model`, `/domain.decision` |
-| **Arch-kit** | Como implementar? | `/arch.route` (fora do domain-kit) |
-
-Aliases legados: G0 = Evidências · G1 = Estratégico + Descoberta · G2 = Operacional.
 
 Cartão do produto: `products/{p}/product-README.md` (visão PM, status por fase, índice).
 
@@ -42,7 +39,7 @@ Cartão do produto: `products/{p}/product-README.md` (visão PM, status por fase
 
 | Comando | O que faz |
 | --- | --- |
-| `/domain.install` | Instala framework no hub (1×) — skills + wrappers bundled |
+| `/domain.install` | Instala o kit no hub (1×) — skills + wrappers bundled |
 | `/domain.init {produto}` | Índices + **scan + síntese** → fase **Evidências** |
 | `/domain.init {p} --adopt` | Produto já no hub — índices + gaps |
 | `/domain.discover` | Lacunas (0b) + DDD por sessão (`--stage`) → Estratégico / Descoberta |
@@ -53,9 +50,8 @@ Cartão do produto: `products/{p}/product-README.md` (visão PM, status por fase
 | `/domain.decision` | Registrar D-n |
 | `/domain.change` | Sessão evolutiva (P-n / E-n) + handoff |
 
-~~`/workkit.init`~~ — alias deprecado de `/domain.install`.  
 ~~`/domain.clarify`~~ — **não usar**; perguntas inline nos comandos acima.  
-~~`/domain.capability`~~ — **deprecated** → arch-kit (`/arch.capability`).
+~~`/domain.capability`~~ — **fora do escopo do domain-kit**.
 
 ---
 
@@ -67,8 +63,10 @@ domain.install
   → domain.discover                      # lacunas + próximo estágio (auto)
   → … strategic → contexts → stories → ES
   → domain.flow 01 …
-  → domain.model --finalize              # Operacional → /arch.route
+  → domain.model --finalize              # Operacional
 ```
+
+Após **Operacional**, a próxima etapa técnica fica **fora do escopo do domain-kit**.
 
 Re-sync: `/domain.scan` se repos/docs mudaram.
 
@@ -107,10 +105,10 @@ Detalhes: [references/plantuml-dashboard.md](references/plantuml-dashboard.md)
 2. **install ≠ init** — hub vs produto; **scan ≠ discover** — fontes vs negócio
 3. **Não inventar** — perguntar ou registrar em abertos (P-n)
 4. **init = scan + síntese** — lacunas e DDD ficam no discover; 1 estágio DDD = 1 sessão
-5. **1 fluxo = 1 sessão** — caminhos em `01-product/03-operacional/fluxos/`
+5. **1 fluxo = 1 sessão** — caminhos em `01-product/04-operacional/fluxos/`
 6. **IDs estáveis** — D-n, fluxo-NN, P-n, E-n, {bc}
 7. **Changelog** — todo scan ou mudança significativa → `CHANGELOG.md`
-8. **Wrapper = path** — skill bundled = know-how; não gravar em paths legados da skill
+8. **Wrapper = path** — skill bundled = know-how; gravar só nos paths de [hub-paths.md](references/hub-paths.md)
 
 ---
 

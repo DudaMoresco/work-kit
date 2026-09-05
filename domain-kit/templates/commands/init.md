@@ -47,7 +47,7 @@ Flags: `--initiative {i}`, `--adopt`
 3. Copiar templates de `domain-kit/templates/` (se ausentes):
    - `sources.yml`, `flows-registry.yml`, `domain-status.json`, `product-README.md`, `CHANGELOG.md` → `products/{produto}/`
    - Substituir `{produto}`, `{iniciativa}` nos templates.
-4. Criar **somente** `03-registry/produto.md` (stub) e `01-product/02-domain/evolucoes.md` (via template) se ausentes.
+4. Criar **somente** `05-decisoes/produto.md` (stub) e `01-product/02-domain/evolucoes.md` (via template) se ausentes.
 5. `product-README.md` permanece stub até discover `--stage contexts` ou preenchimento manual.
 
 ### Fase 0 — Primeiro scan (pré-fase Evidências)
@@ -68,7 +68,7 @@ Flags: `--initiative {i}`, `--adopt`
 
 ### Validação e finalização
 
-16. Validar fase Evidências via `validate_gate.py --phase evidencias --product {p}` (alias legado: `--gate G0`).
+16. Validar fase Evidências via `validate_gate.py --phase evidencias --product {p}`.
 17. `sync_product_workspace.py` (dashboard final) + bloco de visibilidade
 18. Handoff: **`/domain.discover`** (Evidências + síntese ok) ou gaps listados se `--adopt`
 

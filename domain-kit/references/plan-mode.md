@@ -42,7 +42,7 @@ products/{produto}/.draft/
 2. **Arquivo** — gravar em `.draft/{path}` para diff no editor
 3. **Ambos** — recomendado para artefatos longos
 
-**Proibido:** gravar em path canônico (`01-product/`, `02-capabilities/`, `03-registry/` conteúdo novo) sem OK explícito nesta sessão.
+**Proibido:** gravar em path canônico (`01-product/`, `05-decisoes/` conteúdo novo) sem OK explícito nesta sessão.
 
 ---
 
@@ -95,7 +95,7 @@ Máximo **3 perguntas por turno**; registrar pendências em `abertos.md` (també
 1. Fase 0: fontes + manifest + curadoria
 2. Fase 0c: **síntese de evidências** (`findings-brief.md`) — confirmar com usuário; promote `sintese-evidencias.md`
 3. **Sync visibilidade** após cada lote de rascunhos e após promotes (`sync_product_workspace.py`)
-4. Validar G0; handoff `/domain.discover`
+4. Validar fase Evidências; handoff `/domain.discover`
 
 ### `/domain.discover`
 

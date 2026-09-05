@@ -8,7 +8,7 @@ Roteiro interno — impacto por fase do domain-kit.
 | --- | --- | --- |
 | **P-n** | `abertos.md` | O que está errado, incompleto ou incerto? |
 | **E-n** | `evolucoes.md` | O que queremos mudar de propósito? |
-| **D-n** | `03-registry/produto.md` | O que decidimos formalmente? |
+| **D-n** | `05-decisoes/produto.md` | O que decidimos formalmente? |
 
 ## Entrada de sessão
 

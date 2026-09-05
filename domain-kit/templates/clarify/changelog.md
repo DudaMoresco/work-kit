@@ -13,7 +13,7 @@ Todo scan ou mudança material no produto **exige** entrada em `products/{p}/CHA
 | Fase passou (Evidências, Estratégico, Descoberta, Operacional) | init, discover, model | **Sim** |
 | Artefato DDD promovido (estratégico, BCs, story, ES, …) | `/domain.discover` | **Sim** |
 | Fluxo operacional, requisitos NFR, registry promovidos | flow, model | **Sim** |
-| Design tático ou integração técnica (arch-kit) | arch.capability, arch.integrate | **Sim** |
+| Design tático ou integração técnica (fora do escopo) | etapa técnica posterior | **Sim** (se promovido no hub) |
 | Decisão D-n registrada | `/domain.decision` | **Sim** |
 | Registry atualizado (flows-registry, produto.md) | flow, decision, model | **Sim** |
 | Modo incremental — nova capability | discover/capability/flow/model | **Sim** |

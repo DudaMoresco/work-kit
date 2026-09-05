@@ -1,3 +1,5 @@
+> Preâmbulo compartilhado: [plantuml-preamble.md](../../../references/plantuml-preamble.md)
+
 # Convenções PlantUML — Event Storming
 
 Validar com MCP **`user-plantuml`**: `check_syntax`.

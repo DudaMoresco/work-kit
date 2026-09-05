@@ -11,4 +11,4 @@ Pasta **não canônica**. Artefatos aqui aguardam aprovação antes de ir para o
 
 **Descartar:** peça para cancelar o rascunho.
 
-Não referenciar `.draft/` em handoffs downstream (arch-kit, delivery-kit).
+Não referenciar `.draft/` em handoffs para etapas posteriores (fora deste kit).

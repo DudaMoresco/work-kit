@@ -7,7 +7,7 @@ flows: []
 # - id: fluxo-01
 #   title: Título do fluxo
 #   bc: ordem-de-servico
-#   path: 02-capabilities/ordem-de-servico/fluxos/01-slug.md
+#   path: 01-product/04-operacional/fluxos/01-slug.md
 #   deps: []
 #   status: draft          # draft | clarifying | ready | superseded
 #   decisoes: [D-01]

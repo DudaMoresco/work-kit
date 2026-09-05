@@ -1,15 +1,13 @@
 ---
 name: domain-capability
-description: "[DEPRECATED → arch-kit] Design tático de um BC — use /arch.capability quando disponível."
+description: "Fora do escopo do domain-kit — design tático de BC (próxima etapa técnica)."
 ---
 
 ## Explain to user
 
-**Este comando foi movido para o arch-kit.** O domain-kit foca em modelagem de **problema/negócio** (fases Estratégico, Descoberta, Operacional).
+**Este comando está fora do escopo do domain-kit.** O domain-kit foca em modelagem de **problema/negócio** (fases Estratégico, Descoberta, Operacional).
 
-Design tático (agregados, camadas, ports/adapters) é decisão de **arquitetura** — use `/arch.capability {bc}` quando o arch-kit estiver instalado, ou grave manualmente em `products/{p}/arch/{bc}/design-tatico.md`.
-
-Artefatos legados em `02-capabilities/{bc}/design-tatico.md` são marcados como `arch.capabilitiesAdopted` via `adopt_product.py` e **não bloqueiam** o fechamento da fase Operacional.
+Design tático (agregados, camadas, ports/adapters) é **próxima etapa técnica (fora deste kit)**. Se precisar documentar agora, grave em `products/{p}/arch/{bc}/design-tatico.md` (pasta opcional, nunca gated) — não como critério de saída do domain-kit.
 
 ## User Input
 
@@ -19,7 +17,7 @@ $ARGUMENTS
 
 ## Steps
 
-1. Informar deprecação e handoff para arch-kit.
-2. Se o usuário insistir: propor conteúdo em `.draft/arch/{bc}/design-tatico.md` (não em `02-capabilities/`).
+1. Informar que design tático está fora do escopo do domain-kit.
+2. Se o usuário insistir: propor conteúdo em `.draft/arch/{bc}/design-tatico.md` (não inventar path fora de [hub-paths.md](../../references/hub-paths.md) para entregas do kit).
 3. Atualizar `domain-status.json` → `arch.capabilitiesAdopted` após promote.
-4. **Não** validar G2/operacional com design-tatico.
+4. **Não** validar a fase Operacional com design-tatico.

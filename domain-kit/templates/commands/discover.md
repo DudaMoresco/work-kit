@@ -37,7 +37,7 @@ Flags:
 | **Estratégico** | `strategic`, `contexts` (desafio, UL, BCs) |
 | **Descoberta** | `stories`, `event-storming` |
 
-Design tático e integração técnica → **arch-kit** (não neste comando).
+Design tático e integração técnica ficam **fora do escopo do domain-kit** (não neste comando).
 
 ## Plan mode (obrigatório)
 

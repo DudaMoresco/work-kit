@@ -27,7 +27,7 @@ Configurável em `.domain/config.yml` (`plantuml.server`) ou variável `PLANTUML
 .domain/scripts/start_plantuml_server.sh
 
 # Direto do pacote domain-kit:
-bash work-kit/domain-kit/scripts/start_plantuml_server.sh
+bash domain-kit/scripts/start_plantuml_server.sh
 ```
 
 Requisito: **Docker** com imagem `plantuml/plantuml-server:jetty`.

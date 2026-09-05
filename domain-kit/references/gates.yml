@@ -1,6 +1,5 @@
 # Fases do domain-kit (alinhado a scripts/validate_gate.py)
-# Preferir --phase; G0–G2 são aliases.
-# Evidências (G0) → Estratégico + Descoberta (G1) → Operacional (G2) → arch-kit
+# Evidências → Estratégico → Descoberta → Operacional
 
 version: 2
 kit: domain-kit
@@ -10,7 +9,6 @@ phases:
     name: Evidências
     question: O que sabemos, com fonte?
     command: domain.init
-    alias: G0
     note: Primeiro scan em domain.init; domain.scan é re-sync
     requires:
       - path: products/{produto}/sources.yml
@@ -48,30 +46,16 @@ phases:
     name: Operacional
     question: Quais cenários ponta a ponta garantir?
     command: domain.model --finalize
-    handoff: arch.route
-    alias: G2
+    handoff: next_technical_step
     requires:
-      - path: products/{produto}/04-platform/01-non-functional/01-requisitos.md
-      - path: products/{produto}/03-registry/produto.md
+      - path: products/{produto}/01-product/04-operacional/requisitos.md
+      - path: products/{produto}/05-decisoes/produto.md
       - fluxos_min: 1
         paths:
-          - products/{produto}/01-product/03-operacional/fluxos/
+          - products/{produto}/01-product/04-operacional/fluxos/
           - products/{produto}/flows-registry.yml
     does_not_require:
-      - products/{produto}/01-product/04-integration/01-contextos.md
-      - products/{produto}/02-capabilities/{bc}/design-tatico.md
-      - products/{produto}/arch/01-integration/01-contextos.md
-
-# Aliases legados (validate_gate.py --gate)
-gates:
-  G0:
-    phases: [evidencias]
-  G1:
-    phases: [estrategico, descoberta]
-    handoff: H1
-  G2:
-    phases: [operacional]
-    handoff: H2
+      - products/{produto}/arch/
 
 modes:
   full:
@@ -92,7 +76,7 @@ boundary:
     - estrategico
     - descoberta
     - operacional_negocio
-  arch_kit:
+  out_of_scope:
     - design_tatico
     - integracao_tecnica
     - fluxos_tecnicos

@@ -1,6 +1,8 @@
-# Convenções PlantUML — fluxogramas-decisao
+> Preâmbulo compartilhado: [plantuml-preamble.md](../../../references/plantuml-preamble.md)
 
-Alinhado aos MDs em `architecture-hub/products/*/02-capabilities/{bc}/fluxogramas-decisao/`.
+# Convenções PlantUML — fluxogramas-decisao (as-is)
+
+Alinhado aos MDs em `products/*/01-product/03-discovery/00-as-is/`.
 
 Validar com MCP **`user-plantuml`**: `check_syntax` → corrigir → (opcional) `render_diagram`.
 Não usar `https://www.plantuml.com/plantuml`.
@@ -131,3 +133,4 @@ Nomes de participantes = nomes do C4 da feature (Containers + component view cit
 - Activity que só repete a sequência passo a passo sem ramificar
 - Inventar participantes que não existem no C4/código
 - Um único MD gigante com todos os fluxos do domínio (preferir N arquivos + README)
+- Inventar path fora de hub-paths (as-is só em `03-discovery/00-as-is/`)

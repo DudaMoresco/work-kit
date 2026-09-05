@@ -1,7 +1,7 @@
 # Templates — fluxos (know-how)
 
 No domain-kit, preferir [`../../../templates/fluxo-operacional.md`](../../../templates/fluxo-operacional.md)
-em `01-product/03-operacional/fluxos/`. Os templates abaixo servem quando o time
+em `01-product/04-operacional/fluxos/`. Os templates abaixo servem quando o time
 pede sequência PlantUML rica (negócio ou arch).
 
 **Paths:** ver [`../../../wrappers/fluxos-entregaveis.md`](../../../wrappers/fluxos-entregaveis.md).

@@ -1,9 +1,8 @@
 # Domain-kit — configuração do hub
 
 hub_root: .
-# Monorepo work-hub: ../work-kit/domain-kit
-# Clone standalone: /path/to/work-kit/domain-kit
-skills_pack: ../work-kit/domain-kit
+# Path do clone do domain-kit (skills_pack). Em sandbox/teste: .
+skills_pack: .
 
 extensions:
   after_any:
